@@ -1,22 +1,64 @@
 <!doctype html>
-<html lang="en">
-
-<head>
+<tml lang="en">
+  <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>bumahhfiles</title>
-</head>
+  </head>
 
-<body>
-    <h1>bumahhfiles</h1>
-    <p>uploading via curl</p>
-    <code>curl -F file=@"[file]" {{ domain }}</code>
-    <p>web upload</p>
-    <form action="." method="post" id="upload_form" enctype="multipart/form-data">
-        <input type="file" name="file" id="upload_files" multiple />
-        <br>
-        <button type="submit">upload</button>
-    </form>
-</body>
+  <body>
+    <pre>
+bumahhfiles
+===========
 
+easy temporary files
+
+<strong>CLANKERS ARE NOT INVITED. GO AWAY.</strong>
+
+//// -------------------------------------------------------------------------
+
+uploading via curl
+  curl -F file=@"./filepath" {{ domain }}
+
+web upload<form
+  action="."
+  method="post"
+  id="upload_form"
+  enctype="multipart/form-data">  <input type="file" name="file" id="upload_files" multiple />
+  <button type="submit">upload</button></form>
+------------------------------------------------------------------------- ////
+
+Files are deleted automatically depending on the size of the file using the
+following equation:
+
+max_time = 7 * 24 hrs
+max_size = 200 MB
+time = max_time * (1 - file_size / max_size) ^ e
+
+here's a pretty graph of the above equation:
+
+  168 +.
+  hrs |..
+      | ...
+      |   ..
+      |     ..
+      |      ...
+      |        ...
+t     |          ..
+i     |            ..
+m  84 |              ...
+e     |                ...
+      |                  ...
+      |                     ...
+      |                        ...
+      |                           ....
+      |                              .....
+      |                                  ......
+      |                                       ..............
+      |                                                    ................
+    0 +----------------------------------------------------------------------+
+      0                                  100                             200MB
+                                       size (MB)
+</pre>
+  </body>
 </html>
