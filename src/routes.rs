@@ -4,17 +4,13 @@ use crate::{
     utils::{BumAhhError, clean_filename, make_url_list, random},
 };
 use axum::{
-    body::Body,
     extract::{Multipart, Path, State},
-    http::{
-        HeaderMap, HeaderValue, StatusCode,
-        header::{self},
-    },
+    http::HeaderMap,
     response::{Html, IntoResponse},
 };
 use std::path;
 use tokio::{fs, io::AsyncWriteExt};
-use tokio_util::io::ReaderStream;
+use tower::ServiceExt;
 
 pub async fn root() -> IndexTemplate {
     IndexTemplate {
@@ -96,31 +92,17 @@ pub async fn upload(
 pub async fn serve_file(
     State(db): State<DataBase>,
     Path(filename): Path<String>,
+    request: axum::extract::Request,
 ) -> Result<impl IntoResponse, BumAhhError> {
     match db.get_key(&filename).await {
         Some(entry) => {
-            let path = CONFIG.root_dir.join(&filename);
-            let file = fs::File::open(&path)
+            let path = CONFIG.root_dir.join(&entry.key);
+            let service = tower_http::services::ServeFile::new(path);
+            let response = service
+                .oneshot(request)
                 .await
                 .map_err(|_| BumAhhError::FileNotFound)?;
-            let mime_type = mime_guess::from_path(&path).first_or_octet_stream();
-            let content_type = mime_type
-                .as_ref()
-                .parse()
-                .map_err(|_| BumAhhError::Internal("Failed to get content type".into()))?;
-            let content_length = entry
-                .size
-                .to_string()
-                .parse()
-                .map_err(|_| BumAhhError::Internal("Failed to get content length".into()))?;
-            let headers: HeaderMap<HeaderValue> = HeaderMap::from_iter([
-                (header::CONTENT_TYPE, content_type),
-                (header::CONTENT_LENGTH, content_length),
-                (header::ACCEPT_RANGES, "bytes".parse().unwrap()),
-            ]);
-            let stream = ReaderStream::new(file);
-            let body = Body::from_stream(stream);
-            Ok((StatusCode::OK, headers, body).into_response())
+            Ok(response)
         }
         None => Err(BumAhhError::FileNotFound),
     }
