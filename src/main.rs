@@ -1,3 +1,4 @@
+mod gc;
 mod routes;
 mod state;
 mod template;
@@ -59,6 +60,9 @@ async fn main() {
                 ),
         )
         .with_state(db.clone());
+
+    // setup gc
+    gc::start_gc(db);
 
     // serve
     let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await.unwrap();

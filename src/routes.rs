@@ -19,7 +19,7 @@ pub async fn root() -> IndexTemplate {
 }
 
 pub async fn upload_file(
-    State(mut db): State<DataBase>,
+    State(db): State<DataBase>,
     headers: HeaderMap,
     mut form: Multipart,
 ) -> Result<impl IntoResponse, BumAhhError> {
