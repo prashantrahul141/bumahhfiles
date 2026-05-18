@@ -80,13 +80,9 @@ pub async fn upload_file(
         .and_then(|s| s.to_str().ok())
         .is_some_and(|f| f.contains("html"));
 
-    let urls = entries
-        .iter()
-        .map(|x| format!("{}://{}/{}", CONFIG.protocol, CONFIG.host, x.key))
-        .collect::<Vec<_>>();
-
+    let response = Html(make_url_list(&entries, accepts_html));
     db.insert_mul(entries.into_iter()).await;
-    Ok(Html(make_url_list(&urls, accepts_html)))
+    Ok(response)
 }
 
 pub async fn serve_file(

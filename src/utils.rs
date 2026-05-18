@@ -1,4 +1,5 @@
 use std::{
+    fmt::Display,
     hash::{DefaultHasher, Hash, Hasher},
     io,
 };
@@ -7,6 +8,8 @@ use axum::response::IntoResponse;
 use lazy_static::lazy_static;
 use rand::seq::IndexedRandom;
 use thiserror::Error;
+
+use crate::state::{CONFIG, DBEntry};
 
 #[derive(Error, Debug)]
 #[allow(unused)]
@@ -57,12 +60,26 @@ pub fn random(n: usize) -> rand::seq::IndexedSamples<'static, [char], char> {
     safe_chars.sample(&mut rand::rng(), n)
 }
 
-pub fn make_url_list(urls: &[String], html: bool) -> String {
+fn make_url_from_key<K: AsRef<str> + Display>(key: K) -> String {
+    format!("{}://{}/{}", CONFIG.protocol, CONFIG.host, key)
+}
+
+pub fn make_url_list(urls: &[DBEntry], html: bool) -> String {
     if !html {
-        urls.join("\n")
+        urls.iter()
+            .map(|x| format!("{} (~ {:.2} KB)", make_url_from_key(&x.key), x.size / 1024))
+            .collect::<Vec<_>>()
+            .join("\n")
+            + "\n"
     } else {
         urls.iter()
-            .map(|x| format!("<a href={x}>{x}</a>"))
+            .map(|x| {
+                format!(
+                    "<a href={url}>{url}</a> (~ {size:.2} KB)",
+                    url = make_url_from_key(&x.key),
+                    size = x.size / 1024
+                )
+            })
             .collect::<Vec<_>>()
             .join("<br>")
     }
