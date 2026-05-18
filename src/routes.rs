@@ -4,12 +4,17 @@ use crate::{
     utils::{BumAhhError, clean_filename, make_url_list, random},
 };
 use axum::{
-    extract::{Multipart, State},
-    http::HeaderMap,
+    body::Body,
+    extract::{Multipart, Path, State},
+    http::{
+        HeaderMap, HeaderValue, StatusCode,
+        header::{self},
+    },
     response::{Html, IntoResponse},
 };
-use std::{collections::HashMap, path};
+use std::path;
 use tokio::{fs, io::AsyncWriteExt};
+use tokio_util::io::ReaderStream;
 
 pub async fn root() -> IndexTemplate {
     IndexTemplate {
@@ -86,4 +91,37 @@ pub async fn upload(
 
     db.insert_mul(entries.into_iter()).await;
     Ok(Html(make_url_list(&urls, accepts_html)))
+}
+
+pub async fn serve_file(
+    State(db): State<DataBase>,
+    Path(filename): Path<String>,
+) -> Result<impl IntoResponse, BumAhhError> {
+    match db.get_key(&filename).await {
+        Some(entry) => {
+            let path = CONFIG.root_dir.join(&filename);
+            let file = fs::File::open(&path)
+                .await
+                .map_err(|_| BumAhhError::FileNotFound)?;
+            let mime_type = mime_guess::from_path(&path).first_or_octet_stream();
+            let content_type = mime_type
+                .as_ref()
+                .parse()
+                .map_err(|_| BumAhhError::Internal("Failed to get content type".into()))?;
+            let content_length = entry
+                .size
+                .to_string()
+                .parse()
+                .map_err(|_| BumAhhError::Internal("Failed to get content length".into()))?;
+            let headers: HeaderMap<HeaderValue> = HeaderMap::from_iter([
+                (header::CONTENT_TYPE, content_type),
+                (header::CONTENT_LENGTH, content_length),
+                (header::ACCEPT_RANGES, "bytes".parse().unwrap()),
+            ]);
+            let stream = ReaderStream::new(file);
+            let body = Body::from_stream(stream);
+            Ok((StatusCode::OK, headers, body).into_response())
+        }
+        None => Err(BumAhhError::FileNotFound),
+    }
 }

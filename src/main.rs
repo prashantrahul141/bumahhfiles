@@ -4,13 +4,10 @@ mod template;
 mod utils;
 
 use axum::{Router, routing::get};
-use state::CONFIG;
+use state::{CONFIG, DataBase};
 
-use routes::root;
+use routes::{root, serve_file, upload};
 use std::fs;
-
-use routes::upload;
-use state::DataBase;
 
 #[tokio::main]
 async fn main() {
@@ -21,6 +18,7 @@ async fn main() {
     let db = DataBase::default();
     let app = Router::new()
         .route("/", get(root).post(upload))
+        .route("/{filename}", get(serve_file))
         .with_state(db.clone());
 
     let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await.unwrap();

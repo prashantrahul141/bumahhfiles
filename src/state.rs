@@ -1,3 +1,4 @@
+use std::hash::Hash;
 use std::sync::Arc;
 use std::{collections::HashMap, time::SystemTime};
 use std::{fmt::Debug, path::PathBuf};
@@ -21,7 +22,7 @@ pub struct Config {
 impl Default for Config {
     fn default() -> Self {
         Self {
-            root_dir: std::path::PathBuf::new().join("files"),
+            root_dir: std::path::PathBuf::from("files"),
             max_file_size: 10000,
             max_filename_length: 240,
             _max_on_disk_storage: Default::default(),
@@ -63,19 +64,29 @@ impl DBEntry {
 
 #[derive(Default, Debug, Clone)]
 pub struct DataBase {
-    inner: Arc<RwLock<HashMap<u64, DBEntry>>>,
+    inner: Arc<RwLock<HashMap<u64, Arc<DBEntry>>>>,
 }
 
 impl DataBase {
+    pub async fn get(&self, hash: u64) -> Option<Arc<DBEntry>> {
+        let r = self.inner.read().await;
+        r.get(&hash).cloned()
+    }
+
+    pub async fn get_key<S: AsRef<str> + Hash>(&self, key: S) -> Option<Arc<DBEntry>> {
+        let hash = hash_one(&key);
+        self.get(hash).await
+    }
+
     pub async fn insert(&mut self, entry: DBEntry) {
         let mut w = self.inner.write().await;
-        w.insert(hash_one(&entry.key), entry);
+        w.insert(hash_one(&entry.key), Arc::new(entry));
     }
 
     pub async fn insert_mul<E: Iterator<Item = DBEntry>>(&mut self, entries: E) {
         let mut w = self.inner.write().await;
         for entry in entries {
-            w.insert(hash_one(&entry.key), entry);
+            w.insert(hash_one(&entry.key), Arc::new(entry));
         }
     }
 }
