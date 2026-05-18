@@ -23,26 +23,38 @@ pub async fn upload_file(
     headers: HeaderMap,
     mut form: Multipart,
 ) -> Result<impl IntoResponse, BumAhhError> {
-    let mut entries = vec![];
+    let mut entries: Vec<DBEntry> = vec![];
     while let Some(mut field) = form
         .next_field()
         .await
         .map_err(|err| BumAhhError::InvalidRequest(err.to_string()))?
         && let Some("file") = field.name()
     {
+        // only certain amount of files per upload
+        if entries.len() >= CONFIG.max_file_count {
+            for entry in entries {
+                _ = fs::remove_file(CONFIG.root_dir.join(entry.key)).await;
+            }
+            return Err(BumAhhError::TooManyFiles(CONFIG.max_file_count));
+        }
+
+        // clean filename
         let filename = field
             .file_name()
             .map_or(random(5).collect::<String>(), |x| {
                 format!("{}-{}", random(5).collect::<String>(), clean_filename(x))
             });
 
+        // limited file size
         if filename.len() > CONFIG.max_filename_length {
             return Err(BumAhhError::InvalidRequest("Filename too long".into()));
         }
 
+        // created file
         let filepath = path::Path::new(&CONFIG.root_dir).join(&filename);
         let mut file = fs::File::create(&filepath).await?;
 
+        // stream in chunks
         let mut file_size: usize = 0;
         while let Some(chunk) = field
             .chunk()
@@ -63,11 +75,13 @@ pub async fn upload_file(
             }
         }
 
+        // nothing burger for a file?
         if 0 == file_size {
             _ = fs::remove_file(filepath).await;
             continue;
         }
 
+        // push to entries
         entries.push(DBEntry::new(
             filename,
             file_size,
@@ -75,11 +89,13 @@ pub async fn upload_file(
         ));
     }
 
+    // in which form the client wants response
     let accepts_html = headers
         .get("accept")
         .and_then(|s| s.to_str().ok())
         .is_some_and(|f| f.contains("html"));
 
+    // add to db, return.
     let response = Html(make_url_list(&entries, accepts_html));
     db.insert_mul(entries.into_iter()).await;
     Ok(response)

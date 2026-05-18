@@ -1,4 +1,3 @@
-use std::fs;
 use std::hash::Hash;
 use std::sync::Arc;
 use std::{collections::HashMap, time::SystemTime};
@@ -16,6 +15,7 @@ pub struct Config {
     pub host: String,
     pub protocol: String,
     pub max_file_size: usize,
+    pub max_file_count: usize,
     pub max_filename_length: usize,
     pub _max_on_disk_storage: usize,
     pub _max_retention_days: usize,
@@ -27,6 +27,7 @@ impl Default for Config {
             root_dir: std::path::PathBuf::from("files"),
             max_file_size: 250 * 1000 * 1000,
             max_filename_length: 240,
+            max_file_count: 5,
             _max_on_disk_storage: Default::default(),
             _max_retention_days: Default::default(),
             host: "0.0.0.0:3000".into(),

@@ -20,8 +20,10 @@ pub enum BumAhhError {
     Internal(String),
     #[error("Invalid Request: {0}")]
     InvalidRequest(String),
-    #[error("File too big, max file size in bytes: {0}")]
+    #[error("File too big, max file size in bytes: {0} bytes")]
     FileTooBig(usize),
+    #[error("Too many files, allowed a maximum of: {0}")]
+    TooManyFiles(usize),
     #[error("File not found")]
     FileNotFound,
     #[error("unknown data store error")]
