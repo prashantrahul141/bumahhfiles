@@ -93,7 +93,7 @@ pub fn hash_one<T: Hash>(t: &T) -> u64 {
     s.finish()
 }
 
-pub fn retention_time(file_size: usize) -> f32 {
+pub fn retention_time(file_size: u64) -> f32 {
     CONFIG.max_retention_hrs
         * (1_f32 - (file_size as f32 / (CONFIG.max_file_size / 1000 / 1000) as f32))
             .powf(std::f32::consts::E)

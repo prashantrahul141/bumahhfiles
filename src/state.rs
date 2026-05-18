@@ -18,7 +18,7 @@ pub struct Config {
     pub gc_run_internal: Duration,
     pub max_file_count: usize,
     pub max_filename_length: usize,
-    pub max_on_disk_storage: usize,
+    pub max_on_disk_storage: u64,
     pub max_file_size: usize,
     pub max_retention_hrs: f32,
 }
@@ -52,13 +52,13 @@ impl std::fmt::Debug for CONFIG {
 #[derive(Debug)]
 pub struct DBEntry {
     pub key: String,
-    pub size: usize,
+    pub size: u64,
     pub created_at: SystemTime,
     pub delete_key: String,
 }
 
 impl DBEntry {
-    pub fn new(key: String, size: usize, delete_key: String) -> Self {
+    pub fn new(key: String, size: u64, delete_key: String) -> Self {
         Self {
             key,
             size,
@@ -69,16 +69,26 @@ impl DBEntry {
 }
 
 #[derive(Default, Debug, Clone)]
+struct DataBaseInner {
+    entries: HashMap<u64, Arc<DBEntry>>,
+    size: u64,
+}
+
+#[derive(Default, Debug, Clone)]
 pub struct DataBase {
-    inner: Arc<RwLock<HashMap<u64, Arc<DBEntry>>>>,
+    inner: Arc<RwLock<DataBaseInner>>,
 }
 
 #[allow(unused)]
 impl DataBase {
+    pub async fn size(&self) -> u64 {
+        self.inner.read().await.size
+    }
+
     pub async fn get(&self, hash: u64) -> Option<Arc<DBEntry>> {
         debug!("Get entry for hash={hash}");
         let r = self.inner.read().await;
-        r.get(&hash).cloned()
+        r.entries.get(&hash).cloned()
     }
 
     pub async fn get_key<S: AsRef<str> + Hash + Debug>(&self, key: S) -> Option<Arc<DBEntry>> {
@@ -90,14 +100,16 @@ impl DataBase {
     pub async fn insert(&self, entry: DBEntry) {
         debug!("Inserting entry={entry:?}");
         let mut w = self.inner.write().await;
-        w.insert(hash_one(&entry.key), Arc::new(entry));
+        w.size += entry.size;
+        w.entries.insert(hash_one(&entry.key), Arc::new(entry));
     }
 
     pub async fn insert_mul<E: Iterator<Item = DBEntry> + Debug>(&self, entries: E) {
         let mut w = self.inner.write().await;
         debug!("Inserting entries={entries:?}");
         for entry in entries {
-            w.insert(hash_one(&entry.key), Arc::new(entry));
+            w.size += entry.size;
+            w.entries.insert(hash_one(&entry.key), Arc::new(entry));
         }
     }
 
@@ -105,6 +117,7 @@ impl DataBase {
         self.inner
             .read()
             .await
+            .entries
             .iter()
             .map(|(k, v)| (*k, Arc::clone(v)))
             .collect::<Vec<_>>()
@@ -113,8 +126,9 @@ impl DataBase {
     pub async fn delete(&self, key: u64) -> Option<Arc<DBEntry>> {
         debug!("deleting entry with key={key}");
         let mut w = self.inner.write().await;
-        let entry = w.remove(&key);
+        let entry = w.entries.remove(&key);
         if let Some(e) = &entry {
+            w.size -= e.size;
             fs::remove_file(CONFIG.root_dir.join(&e.key)).await;
         }
         entry
@@ -128,8 +142,9 @@ impl DataBase {
         let mut w = self.inner.write().await;
         let mut deleted = vec![];
         for key in keys {
-            let entry = w.remove(&key);
+            let entry = w.entries.remove(&key);
             if let Some(e) = &entry {
+                w.size -= e.size;
                 fs::remove_file(CONFIG.root_dir.join(&e.key)).await;
             }
             deleted.push(entry)

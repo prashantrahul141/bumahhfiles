@@ -84,7 +84,7 @@ pub async fn upload_file(
         // push to entries
         entries.push(DBEntry::new(
             filename,
-            file_size,
+            file_size as u64,
             random(5).collect::<String>(),
         ));
     }
