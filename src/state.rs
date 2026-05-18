@@ -1,4 +1,11 @@
+use std::sync::Arc;
+use std::{collections::HashMap, time::SystemTime};
+use std::{fmt::Debug, path::PathBuf};
+use tokio::sync::RwLock;
+
 use lazy_static::lazy_static;
+
+use crate::utils::hash_one;
 
 #[derive(Debug)]
 pub struct Config {
@@ -32,5 +39,43 @@ lazy_static! {
 impl std::fmt::Debug for CONFIG {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         (**self).fmt(f)
+    }
+}
+
+#[derive(Debug)]
+pub struct DBEntry {
+    pub key: String,
+    pub size: usize,
+    pub created_at: SystemTime,
+    pub delete_key: String,
+}
+
+impl DBEntry {
+    pub fn new(key: String, size: usize, delete_key: String) -> Self {
+        Self {
+            key,
+            size,
+            created_at: SystemTime::now(),
+            delete_key,
+        }
+    }
+}
+
+#[derive(Default, Debug, Clone)]
+pub struct DataBase {
+    inner: Arc<RwLock<HashMap<u64, DBEntry>>>,
+}
+
+impl DataBase {
+    pub async fn insert(&mut self, entry: DBEntry) {
+        let mut w = self.inner.write().await;
+        w.insert(hash_one(&entry.key), entry);
+    }
+
+    pub async fn insert_mul<E: Iterator<Item = DBEntry>>(&mut self, entries: E) {
+        let mut w = self.inner.write().await;
+        for entry in entries {
+            w.insert(hash_one(&entry.key), entry);
+        }
     }
 }

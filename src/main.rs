@@ -18,7 +18,8 @@ async fn main() {
     if !std::path::Path::exists(&CONFIG.root_dir) {
         fs::create_dir(&CONFIG.root_dir).unwrap();
     }
-    let app = Router::new().route("/", get(root));
+    let db = DataBase::default();
+    let app = Router::new().route("/", get(root)).with_state(db.clone());
 
     let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await.unwrap();
     axum::serve(listener, app).await.unwrap();
