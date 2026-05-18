@@ -15,26 +15,26 @@ pub struct Config {
     pub root_dir: PathBuf,
     pub host: String,
     pub protocol: String,
-    pub max_file_size: usize,
     pub gc_run_internal: Duration,
     pub max_file_count: usize,
     pub max_filename_length: usize,
-    pub _max_on_disk_storage: usize,
-    pub _max_retention_days: usize,
+    pub max_on_disk_storage: usize,
+    pub max_file_size: usize,
+    pub max_retention_hrs: f32,
 }
 
 impl Default for Config {
     fn default() -> Self {
         Self {
             root_dir: std::path::PathBuf::from("files"),
-            max_file_size: 250 * 1000 * 1000,
-            max_filename_length: 240,
-            max_file_count: 5,
-            gc_run_internal: Duration::from_secs(30),
-            _max_on_disk_storage: Default::default(),
-            _max_retention_days: Default::default(),
             host: "0.0.0.0:3000".into(),
             protocol: "http".into(),
+            gc_run_internal: Duration::from_secs(30),
+            max_file_count: 5,
+            max_filename_length: 240,
+            max_on_disk_storage: 10 * 1024 * 1024 * 1024,
+            max_file_size: 200 * 1000 * 1000,
+            max_retention_hrs: 7.0 * 24.0,
         }
     }
 }

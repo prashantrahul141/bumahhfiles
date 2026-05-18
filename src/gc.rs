@@ -1,4 +1,9 @@
-use crate::state::{CONFIG, DBEntry, DataBase};
+use std::time::{Duration, SystemTime};
+
+use crate::{
+    state::{CONFIG, DBEntry, DataBase},
+    utils::retention_time,
+};
 use tokio::time::sleep;
 use tracing::debug;
 
@@ -23,6 +28,11 @@ async fn gc(db: DataBase) {
     db.delete_mul(ids.into_iter()).await;
 }
 
-fn file_expired(_file: &DBEntry) -> bool {
-    true
+fn file_expired(file: &DBEntry) -> bool {
+    let start_time = file.created_at;
+    let retention_time = retention_time(file.size) as u64;
+    match start_time.checked_add(Duration::from_hours(retention_time)) {
+        Some(expiration) => SystemTime::now() >= expiration,
+        None => true,
+    }
 }
