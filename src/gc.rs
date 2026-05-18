@@ -12,12 +12,12 @@ pub fn start_gc(db: DataBase) {
     tokio::spawn(async move {
         loop {
             sleep(CONFIG.gc_run_internal).await;
-            gc(db.clone()).await;
+            trigger_gc(db.clone()).await;
         }
     });
 }
 
-async fn gc(db: DataBase) {
+async fn trigger_gc(db: DataBase) {
     debug!("running gc");
     let ids = db
         .entries()
