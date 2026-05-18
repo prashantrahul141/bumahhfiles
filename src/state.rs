@@ -5,6 +5,7 @@ use std::{fmt::Debug, path::PathBuf};
 use tokio::sync::RwLock;
 
 use lazy_static::lazy_static;
+use tracing::debug;
 
 use crate::utils::hash_one;
 
@@ -23,7 +24,7 @@ impl Default for Config {
     fn default() -> Self {
         Self {
             root_dir: std::path::PathBuf::from("files"),
-            max_file_size: 10000,
+            max_file_size: 250 * 1000 * 1000,
             max_filename_length: 240,
             _max_on_disk_storage: Default::default(),
             _max_retention_days: Default::default(),
@@ -69,22 +70,26 @@ pub struct DataBase {
 
 impl DataBase {
     pub async fn get(&self, hash: u64) -> Option<Arc<DBEntry>> {
+        debug!("Get entry for hash={hash}");
         let r = self.inner.read().await;
         r.get(&hash).cloned()
     }
 
-    pub async fn get_key<S: AsRef<str> + Hash>(&self, key: S) -> Option<Arc<DBEntry>> {
+    pub async fn get_key<S: AsRef<str> + Hash + Debug>(&self, key: S) -> Option<Arc<DBEntry>> {
+        debug!("Get entry for key={key:?}");
         let hash = hash_one(&key);
         self.get(hash).await
     }
 
     pub async fn insert(&mut self, entry: DBEntry) {
+        debug!("Inserting entry={entry:?}");
         let mut w = self.inner.write().await;
         w.insert(hash_one(&entry.key), Arc::new(entry));
     }
 
-    pub async fn insert_mul<E: Iterator<Item = DBEntry>>(&mut self, entries: E) {
+    pub async fn insert_mul<E: Iterator<Item = DBEntry> + Debug>(&mut self, entries: E) {
         let mut w = self.inner.write().await;
+        debug!("Inserting entries={entries:?}");
         for entry in entries {
             w.insert(hash_one(&entry.key), Arc::new(entry));
         }

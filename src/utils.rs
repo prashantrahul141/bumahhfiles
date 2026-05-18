@@ -32,12 +32,17 @@ impl IntoResponse for BumAhhError {
 }
 
 lazy_static! {
-    static ref allowed_chars: Vec<char> = ('a'..='z')
+    // i really dont want random() to pick '.' as the first character
+    static ref safe_chars: Vec<char> = ('a'..='z')
         .chain('A'..='Z')
         .chain('0'..='9')
         .chain('_'..='_')
-        .chain('.'..='.')
-        .collect::<Vec<_>>();
+        .collect::<Vec<char>>();
+    static ref allowed_chars: Vec<char> = safe_chars
+        .iter()
+        .cloned()
+        .chain(std::iter::once('.'))
+        .collect();
 }
 
 pub fn clean_filename<S: AsRef<str>>(filename: S) -> String {
@@ -49,7 +54,7 @@ pub fn clean_filename<S: AsRef<str>>(filename: S) -> String {
 }
 
 pub fn random(n: usize) -> rand::seq::IndexedSamples<'static, [char], char> {
-    allowed_chars.sample(&mut rand::rng(), n)
+    safe_chars.sample(&mut rand::rng(), n)
 }
 
 pub fn make_url_list(urls: &[String], html: bool) -> String {
