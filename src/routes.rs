@@ -18,7 +18,7 @@ pub async fn root() -> IndexTemplate {
     }
 }
 
-pub async fn upload(
+pub async fn upload_file(
     State(mut db): State<DataBase>,
     headers: HeaderMap,
     mut form: Multipart,
