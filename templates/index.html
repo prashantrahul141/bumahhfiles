@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>bumahhfiles</title>
+</head>
+
+<body>
+    <h1>bumahhfiles</h1>
+    <p>uploading via curl</p>
+    <code>curl -F file=@"[file]" {{ domain }}</code>
+    <p>web upload</p>
+    <form action="." method="post" id="upload_form" enctype="multipart/form-data">
+        <input type="file" name="file" id="upload_files" multiple />
+        <br>
+        <button type="submit">upload</button>
+    </form>
+</body>
+
+</html>
