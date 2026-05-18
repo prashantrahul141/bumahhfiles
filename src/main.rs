@@ -30,9 +30,10 @@ async fn main() {
         .init();
 
     // setup files directory
-    if !std::path::Path::exists(&CONFIG.root_dir) {
-        fs::create_dir(&CONFIG.root_dir).unwrap();
+    if std::path::Path::exists(&CONFIG.root_dir) {
+        fs::remove_dir_all(&CONFIG.root_dir).unwrap();
     }
+    _ = fs::create_dir(&CONFIG.root_dir);
 
     // app state
     let db = DataBase::default();
