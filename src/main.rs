@@ -19,7 +19,9 @@ async fn main() {
         fs::create_dir(&CONFIG.root_dir).unwrap();
     }
     let db = DataBase::default();
-    let app = Router::new().route("/", get(root)).with_state(db.clone());
+    let app = Router::new()
+        .route("/", get(root).post(upload))
+        .with_state(db.clone());
 
     let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await.unwrap();
     axum::serve(listener, app).await.unwrap();
