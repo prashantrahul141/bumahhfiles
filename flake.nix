@@ -41,18 +41,15 @@
         commonArgs = { inherit src; };
 
         cargoArtifacts = craneLib.buildDepsOnly commonArgs;
-        package =
-          {
-            craneLib,
-            lib,
-            src,
-          }:
-          craneLib.buildPackage {
-            inherit cargoArtifacts src;
-            doCheck = false;
-          };
+        package = craneLib.buildPackage {
+          inherit cargoArtifacts src;
+          doCheck = false;
+        };
       in
       {
+        apps.default = flake-utils.lib.mkApp {
+          drv = package;
+        };
 
         packages = {
           inherit package;
