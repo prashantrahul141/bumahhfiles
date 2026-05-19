@@ -17,10 +17,11 @@ easy temporary files
 
 //// -------------------------------------------------------------------------
 
-uploading via curl
+<p>uploading via curl</p>
   curl -F file=@"./filepath" {{ domain }}
 
-web upload<form
+<p id="web-upload">web upload</p>
+<form
   action="."
   method="post"
   id="upload_form"
@@ -59,6 +60,46 @@ e     |                ...
     0 +----------------------------------------------------------------------+
       0                                  100                             200MB
                                        size (MB)
+                                       
+//// -------------------------------------------------------------------------
+
+<details><summary>Uploading</summary>
+<p>Files can be uploaded via curl using the following:</p>    <code>curl -F file=@"./miku.png" {{ domain }}</code>
+
+<p>even multiple files in a single request using:</p>    <code>curl -F file=@"./miku.png" -F file=@"./teto.png" {{ domain }}</code>
+
+<p>Or you can use <a href="#web-upload">web upload option</a></p>
+</details>
+<details><summary>Deleting</summary><p>With every upload you get a del_key. Which you can use to delete your files by either opening: 
+
+    {{ domain }}/d/{filename}?del_key={del_key}
+
+ example:
+    {{ domain }}/d/0eHak-miku.png?del_key=upZ9s
+
+in your browser
+
+Or by sending a DELETE request to:
+
+    {{ domain }}/{filename}?del_key={del_key}
+
+example:
+    curl -X DELETE {{ domain }}/0eHak-miku.png?del_key=upZ9s</p>
+</details>
+<details><summary>TOS</summary><p>Please do not upload any of the following:
+  * ai slop
+  * backups
+  * CI build artifacts
+  * other automated mass uploads
+  * doxxing, database dumps containing personal information
+  * extremist material of any kind
+  * malware / botnet
+  * pirated content
+  * pornography and gore
+  * terrorist content
+  * anything illegal under Indian law</p>
+</details>
+<a target="_blank" style="text-decoration: none;" href="https://github.com/prashantrahul141/bumahhfiles">source :3</a>
 </pre>
-  </body>
+</body>
 </html>
