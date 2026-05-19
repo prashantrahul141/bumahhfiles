@@ -68,6 +68,7 @@ async fn main() {
     gc::start_gc(db);
 
     // serve
-    let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await.unwrap();
+    let addr = SocketAddr::new(CONFIG.internal_host.parse().unwrap(), CONFIG.internal_port);
+    let listener = tokio::net::TcpListener::bind(addr).await.unwrap();
     axum::serve(listener, app).await.unwrap();
 }

@@ -8,13 +8,15 @@ Configuration can be done via environment variables
 | name                       | default            | purpose                       |
 |----------------------------|--------------------|-------------------------------|
 | BUMAHH_ROOT_DIR            | "files"            | where to store files          |
-| BUMAHH_HOST                | "0.0.0.0:3000      | where to listen               |
-| BUMAHH_PROTOCOL            | "http"             | what protocol                 |
+| BUMAHH_INTERNAL_HOST       | "0.0.0.0"          | where to listen               |
+| BUMAHH_INTERNAL_PORT       | 3000               | which port to listen          |
+| BUMAHH_EXTERNAL_PROTOCOL   | "http"             | used to format links          |
+| BUMAHH_EXTERNAL_HOST       | "0.0.0.0"          | used to format links          |
 | BUMAHH_GC_INTERVAL_MIN     | 30                 | garbage collection interval   |
 | BUMAHH_MAX_FILE_COUNT      | 5                  | max file upload count per req |
 | BUMAHH_MAX_FILENAME_LENGTH | 240                | max filename in storage       |
 | BUMAHH_MAX_ON_DISK_STORAGE | 16106127360 (15GB) | max storage allowed           |
-| BUMAHH_MAX_FILE_SIZE       | 209715200  (200MB) | max per file size             |
+| BUMAHH_MAX_FILE_SIZE       | 209715200 (200MB)  | max per file size             |
 | BUMAHH_MAX_RETENTION_HRS   | 168 hours          | Max retention time in hours   |
 
 

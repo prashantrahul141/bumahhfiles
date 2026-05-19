@@ -15,7 +15,7 @@ use tower::ServiceExt;
 
 pub async fn root() -> impl IntoResponse {
     HtmlTemplate(IndexTemplate {
-        domain: format!("{}://{}", CONFIG.protocol, CONFIG.host),
+        domain: format!("{}://{}", CONFIG.external_host, CONFIG.external_host),
     })
 }
 

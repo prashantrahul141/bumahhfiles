@@ -69,13 +69,16 @@ pub fn random(n: usize) -> rand::seq::IndexedSamples<'static, [char], char> {
 }
 
 fn make_url_from_key<K: AsRef<str> + Display>(key: K) -> String {
-    format!("{}://{}/{}", CONFIG.protocol, CONFIG.host, key)
+    format!(
+        "{}://{}/{}",
+        CONFIG.external_protocol, CONFIG.external_host, key
+    )
 }
 
 fn make_del_url<K: AsRef<str> + Display>(key: K, del_id: K) -> String {
     format!(
         "{}://{}/d/{}?del_key={}",
-        CONFIG.protocol, CONFIG.host, key, del_id
+        CONFIG.external_protocol, CONFIG.external_host, key, del_id
     )
 }
 

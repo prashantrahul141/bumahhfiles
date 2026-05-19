@@ -13,8 +13,10 @@ use crate::utils::{env_or, hash_one};
 #[derive(Debug)]
 pub struct Config {
     pub root_dir: PathBuf,
-    pub host: String,
-    pub protocol: String,
+    pub internal_host: String,
+    pub internal_port: u16,
+    pub external_protocol: String,
+    pub external_host: String,
     pub gc_run_interval: Duration,
     pub max_file_count: usize,
     pub max_filename_length: usize,
@@ -27,8 +29,10 @@ impl Default for Config {
     fn default() -> Self {
         Self {
             root_dir: std::path::PathBuf::from(env_or("BUMAHH_ROOT_DIR", "files".to_string())),
-            host: env_or("BUMAHH_HOST", "0.0.0.0:3000".to_string()),
-            protocol: env_or("BUMAHH_PROTOCOL", "http".to_string()),
+            internal_host: env_or("BUMAHH_INTERNAL_HOST", "0.0.0.0".to_string()),
+            internal_port: env_or("BUMAHH_INTERNAL_PORT", 3000),
+            external_protocol: env_or("BUMAHH_EXTERNAL_PROTOCOL", "http".to_string()),
+            external_host: env_or("BUMAHH_EXTERNAL_HOST", "0.0.0.0".to_string()),
             gc_run_interval: Duration::from_mins(env_or("BUMAHH_GC_INTERVAL_MIN", 30)),
             max_file_count: env_or("BUMAHH_MAX_FILE_COUNT", 5),
             max_filename_length: env_or("BUMAHH_MAX_FILENAME_LENGTH", 240),
