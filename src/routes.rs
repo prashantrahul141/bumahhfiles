@@ -48,15 +48,15 @@ pub async fn upload_file(
         }
 
         // clean filename
-        let filename = field
+        let mut filename = field
             .file_name()
             .map_or(random(5).collect::<String>(), |x| {
                 format!("{}-{}", random(5).collect::<String>(), clean_filename(x))
             });
 
-        // limited file size
+        // limited file name length
         if filename.len() > CONFIG.max_filename_length {
-            return Err(BumAhhError::InvalidRequest("Filename too long".into()));
+            filename = filename[0..CONFIG.max_filename_length].to_string();
         }
 
         // created file
