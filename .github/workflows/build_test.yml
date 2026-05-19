@@ -1,0 +1,33 @@
+name: Build test
+
+on:
+  pull_request:
+    branches: [ "main" ]
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build_test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: ["ubuntu-latest",  "windows-latest", "macos-latest"]
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+    - name: Checkout repo recursively
+      uses: actions/checkout@v4
+      with:
+        submodules: 'recursive'
+        fetch-depth: 1
+
+    - name: Build
+      run: cargo build --verbose
+    - name: Run tests
+      run: cargo test --verbose
