@@ -78,7 +78,10 @@ pub async fn upload_file(
                 .await
                 .map_err(BumAhhError::IO)?;
 
-            if file_size > CONFIG.max_file_size {
+            if file_size >= CONFIG.max_file_size {
+                for entry in entries {
+                    _ = fs::remove_file(CONFIG.root_dir.join(entry.key)).await;
+                }
                 _ = fs::remove_file(filepath).await;
                 return Err(BumAhhError::FileTooBig(CONFIG.max_file_size));
             }
