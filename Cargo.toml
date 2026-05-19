@@ -8,12 +8,10 @@ askama = "0.16.0"
 axum = { version = "0.8.9", features = ["multipart"] }
 dotenvy = "0.15.7"
 lazy_static = "1.5.0"
-mime_guess = "2.0.5"
 rand = "0.10.1"
 serde = { version = "1.0.228", features = ["derive"] }
 thiserror = "2.0.18"
 tokio = { version = "1.52.3", features = ["full"] }
-tokio-util = { version = "0.7.18", features = ["io"] }
 tower = "0.5.3"
 tower-http = { version = "0.6.10", features = ["trace", "fs", "limit"] }
 tracing = "0.1.44"
