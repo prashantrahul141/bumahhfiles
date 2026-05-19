@@ -6,7 +6,7 @@ use std::{fmt::Debug, path::PathBuf};
 use tokio::{fs, sync::RwLock};
 
 use lazy_static::lazy_static;
-use tracing::debug;
+use tracing::{debug, info};
 
 use crate::utils::{env_or, hash_one};
 
@@ -90,7 +90,6 @@ impl DataBase {
     }
 
     pub async fn get(&self, hash: u64) -> Option<Arc<DBEntry>> {
-        debug!("Get entry for hash={hash}");
         let r = self.inner.read().await;
         r.entries.get(&hash).cloned()
     }
@@ -102,7 +101,7 @@ impl DataBase {
     }
 
     pub async fn insert(&self, entry: DBEntry) {
-        debug!("Inserting entry={entry:?}");
+        info!("inserting entry={entry:?}");
         let mut w = self.inner.write().await;
         w.size += entry.size;
         w.entries.insert(hash_one(&entry.key), Arc::new(entry));
@@ -110,11 +109,13 @@ impl DataBase {
 
     pub async fn insert_mul<E: Iterator<Item = DBEntry> + Debug>(&self, entries: E) {
         let mut w = self.inner.write().await;
-        debug!("Inserting entries={entries:?}");
+        let mut count = 0;
         for entry in entries {
+            count += 1;
             w.size += entry.size;
             w.entries.insert(hash_one(&entry.key), Arc::new(entry));
         }
+        debug!("inserted {count} entries");
     }
 
     pub async fn entries(&self) -> Vec<(u64, Arc<DBEntry>)> {
@@ -132,7 +133,7 @@ impl DataBase {
     }
 
     pub async fn delete(&self, key: u64) -> Option<Arc<DBEntry>> {
-        debug!("deleting entry with key={key}");
+        info!("deleting entry with key={key}");
         let mut w = self.inner.write().await;
         let entry = w.entries.remove(&key);
         if let Some(e) = &entry {
@@ -146,7 +147,7 @@ impl DataBase {
         &self,
         keys: E,
     ) -> Vec<Option<Arc<DBEntry>>> {
-        debug!("deleting entries with key={keys:?}");
+        info!("deleting entries with key={keys:?}");
         let mut w = self.inner.write().await;
         let mut deleted = vec![];
         for key in keys {

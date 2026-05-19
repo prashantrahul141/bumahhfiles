@@ -12,6 +12,7 @@ use serde::Deserialize;
 use std::path;
 use tokio::{fs, io::AsyncWriteExt};
 use tower::ServiceExt;
+use tracing::{error, warn};
 
 pub async fn root() -> impl IntoResponse {
     HtmlTemplate(IndexTemplate {
@@ -35,6 +36,10 @@ pub async fn upload_file(
     {
         // only certain amount of files per upload
         if entries.len() >= CONFIG.max_file_count {
+            warn!(
+                "tried to upload more than {} files in a single request",
+                CONFIG.max_file_count
+            );
             for entry in entries {
                 _ = fs::remove_file(CONFIG.root_dir.join(entry.key)).await;
             }
@@ -46,6 +51,7 @@ pub async fn upload_file(
 
         // check total storage
         if db.size().await + total_entries_size >= CONFIG.max_on_disk_storage {
+            error!("storage bucket limit reached");
             for entry in entries {
                 _ = fs::remove_file(CONFIG.root_dir.join(entry.key)).await;
             }
@@ -68,16 +74,22 @@ pub async fn upload_file(
         let filepath = path::Path::new(&CONFIG.root_dir).join(&filename);
         let mut file = fs::File::create(&filepath)
             .await
+            .inspect_err(|e| error!("failed to create file: {e}"))
             .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, BumAhhError::IO(e)))?;
 
         // stream in chunks
         let mut file_size: usize = 0;
-        while let Some(chunk) = field.chunk().await.map_err(|err| {
-            (
-                StatusCode::BAD_REQUEST,
-                BumAhhError::InvalidRequest(err.to_string()),
-            )
-        })? {
+        while let Some(chunk) = field
+            .chunk()
+            .await
+            .inspect_err(|e| error!("failed to get next chunk: {e}"))
+            .map_err(|err| {
+                (
+                    StatusCode::BAD_REQUEST,
+                    BumAhhError::InvalidRequest(err.to_string()),
+                )
+            })?
+        {
             file_size = file_size.checked_add(chunk.len()).ok_or_else(|| {
                 (
                     StatusCode::BAD_REQUEST,
@@ -87,9 +99,14 @@ pub async fn upload_file(
 
             file.write_all(chunk.as_ref())
                 .await
+                .inspect_err(|e| error!("failed to write to file : {e}"))
                 .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, BumAhhError::IO(e)))?;
 
             if file_size >= CONFIG.max_file_size {
+                warn!(
+                    "tried uploading a rather huge file >{}KB",
+                    CONFIG.max_file_size / 1024
+                );
                 for entry in entries {
                     _ = fs::remove_file(CONFIG.root_dir.join(entry.key)).await;
                 }
@@ -140,10 +157,14 @@ pub async fn serve_file(
             let response = service
                 .oneshot(request)
                 .await
+                .inspect_err(|e| error!("failed to serve file: {e}"))
                 .map_err(|_| (StatusCode::NOT_FOUND, BumAhhError::FileNotFound))?;
             Ok(response)
         }
-        None => Err((StatusCode::NOT_FOUND, BumAhhError::FileNotFound)),
+        None => {
+            warn!("file={} does not exist", filename);
+            Err((StatusCode::NOT_FOUND, BumAhhError::FileNotFound))
+        }
     }
 }
 

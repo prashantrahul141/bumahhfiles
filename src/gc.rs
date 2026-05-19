@@ -5,10 +5,10 @@ use crate::{
     utils::retention_time,
 };
 use tokio::time::sleep;
-use tracing::debug;
+use tracing::info;
 
 pub fn start_gc(db: DataBase) {
-    debug!("starting gc");
+    info!("starting gc");
     tokio::spawn(async move {
         loop {
             sleep(CONFIG.gc_run_interval).await;
@@ -18,7 +18,7 @@ pub fn start_gc(db: DataBase) {
 }
 
 async fn trigger_gc(db: DataBase) {
-    debug!("running gc");
+    info!("running gc");
     let ids = db
         .entries()
         .await

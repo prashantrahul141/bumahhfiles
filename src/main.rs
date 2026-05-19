@@ -4,11 +4,11 @@ mod state;
 mod template;
 mod utils;
 
-use axum::{Router, extract::DefaultBodyLimit, http::Request, routing::get};
+use axum::{Router, extract::DefaultBodyLimit, http::Request, response::Response, routing::get};
 use state::{CONFIG, DataBase};
 use std::{net::SocketAddr, time::Duration};
 use tower_http::{classify::ServerErrorsFailureClass, trace::TraceLayer};
-use tracing::{Span, info, info_span};
+use tracing::{Span, info};
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
 use routes::{delete_file, root, serve_file, upload_file};
@@ -35,12 +35,15 @@ fn setup_tracing() {
         )
         .with(tracing_subscriber::fmt::layer())
         .init();
+    info!("logging setup done")
 }
 
 fn setup_files_dir() {
     if std::path::Path::exists(&CONFIG.root_dir) {
+        info!("files directory exists, deleting it.");
         fs::remove_dir_all(&CONFIG.root_dir).unwrap();
     }
+    info!("creating new files directory at path={:?}", CONFIG.root_dir);
     _ = fs::create_dir(&CONFIG.root_dir);
 }
 
@@ -64,17 +67,15 @@ async fn main() {
         ))
         .layer(
             TraceLayer::new_for_http()
-                .make_span_with(|request: &Request<_>| {
-                    info_span!(
-                        "REQ",
-                        "{} | {}",
-                        request.method(),
-                        request.uri().to_string()
-                    )
+                .on_request(|_request: &Request<_>, _span: &Span| {
+                    tracing::debug!("new request -------------------")
+                })
+                .on_response(|_response: &Response, _latency: Duration, _span: &Span| {
+                    tracing::debug!("response done -----------------")
                 })
                 .on_failure(
                     |_error: ServerErrorsFailureClass, _latency: Duration, _span: &Span| {
-                        tracing::error!("something went wrong")
+                        tracing::error!("request failed")
                     },
                 ),
         )
@@ -86,5 +87,6 @@ async fn main() {
     // serve
     let addr = SocketAddr::new(CONFIG.internal_host.parse().unwrap(), CONFIG.internal_port);
     let listener = tokio::net::TcpListener::bind(addr).await.unwrap();
+    info!("listening at addr={addr}");
     axum::serve(listener, app).await.unwrap();
 }
