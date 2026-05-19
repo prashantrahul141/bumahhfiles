@@ -1,11 +1,11 @@
 use std::{
     env,
     ffi::OsStr,
-    fmt::Debug,
-    fmt::Display,
+    fmt::{Debug, Display},
     hash::{DefaultHasher, Hash, Hasher},
     io,
     str::FromStr,
+    time::Duration,
 };
 
 use axum::response::IntoResponse;
@@ -119,10 +119,17 @@ pub fn hash_one<T: Hash>(t: &T) -> u64 {
     s.finish()
 }
 
-pub fn retention_time(file_size: u64) -> f32 {
-    CONFIG.max_retention_hrs
-        * (1_f32 - (file_size as f32 / (CONFIG.max_file_size / 1000 / 1000) as f32))
-            .powf(std::f32::consts::E)
+pub fn retention_time(file_size: u64) -> Duration {
+    // the equation blows if you provide file size bigger than max file size.
+    if file_size > CONFIG.max_file_size as u64 {
+        return Duration::from_mins(0);
+    }
+
+    let hrs = CONFIG.min_retention_hrs
+        + (CONFIG.max_retention_hrs
+            * (1_f32 - (file_size as f32 / (CONFIG.max_file_size) as f32))
+                .powf(std::f32::consts::E));
+    Duration::from_mins((hrs * 60.0) as u64)
 }
 
 pub fn env_or<E, T>(key: E, default: T) -> T

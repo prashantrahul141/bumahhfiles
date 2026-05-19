@@ -23,6 +23,7 @@ pub struct Config {
     pub max_on_disk_storage: u64,
     pub max_file_size: usize,
     pub max_retention_hrs: f32,
+    pub min_retention_hrs: f32,
 }
 
 impl Default for Config {
@@ -39,6 +40,7 @@ impl Default for Config {
             max_on_disk_storage: env_or("BUMAHH_MAX_ON_DISK_STORAGE", 15 * 1024 * 1024 * 1024),
             max_file_size: env_or("BUMAHH_MAX_FILE_SIZE", 200 * 1024 * 1024),
             max_retention_hrs: env_or("BUMAHH_MAX_RETENTION_HRS", 7.0 * 24.0),
+            min_retention_hrs: env_or("BUMAHH_MIN_RETENTION_HRS", 1.0),
         }
     }
 }

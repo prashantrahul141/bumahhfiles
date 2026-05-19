@@ -1,4 +1,4 @@
-use std::time::{Duration, SystemTime};
+use std::time::SystemTime;
 
 use crate::{
     state::{CONFIG, DBEntry, DataBase},
@@ -30,8 +30,7 @@ async fn trigger_gc(db: DataBase) {
 
 fn file_expired(file: &DBEntry) -> bool {
     let start_time = file.created_at;
-    let retention_time = retention_time(file.size) as u64;
-    match start_time.checked_add(Duration::from_hours(retention_time)) {
+    match start_time.checked_add(retention_time(file.size)) {
         Some(expiration) => SystemTime::now() >= expiration,
         None => true,
     }
