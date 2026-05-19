@@ -1,6 +1,6 @@
 use crate::{
     state::{CONFIG, DBEntry, DataBase},
-    template::IndexTemplate,
+    template::{HtmlTemplate, IndexTemplate},
     utils::{BumAhhError, clean_filename, make_url_list, random},
 };
 use axum::{
@@ -12,10 +12,10 @@ use std::path;
 use tokio::{fs, io::AsyncWriteExt};
 use tower::ServiceExt;
 
-pub async fn root() -> IndexTemplate {
-    IndexTemplate {
+pub async fn root() -> impl IntoResponse {
+    HtmlTemplate(IndexTemplate {
         domain: format!("{}://{}", CONFIG.protocol, CONFIG.host),
-    }
+    })
 }
 
 pub async fn upload_file(
