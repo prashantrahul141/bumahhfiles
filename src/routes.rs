@@ -5,7 +5,7 @@ use crate::{
 };
 use axum::{
     extract::{Multipart, Path, Query, State},
-    http::HeaderMap,
+    http::{HeaderMap, StatusCode},
     response::{Html, IntoResponse},
 };
 use serde::Deserialize;
@@ -23,21 +23,25 @@ pub async fn upload_file(
     State(db): State<DataBase>,
     headers: HeaderMap,
     mut form: Multipart,
-) -> Result<impl IntoResponse, BumAhhError> {
+) -> Result<impl IntoResponse, (StatusCode, BumAhhError)> {
     let mut entries: Vec<DBEntry> = vec![];
     let mut total_entries_size: u64 = 0;
-    while let Some(mut field) = form
-        .next_field()
-        .await
-        .map_err(|err| BumAhhError::InvalidRequest(err.to_string()))?
-        && let Some("file") = field.name()
+    while let Some(mut field) = form.next_field().await.map_err(|err| {
+        (
+            StatusCode::BAD_REQUEST,
+            BumAhhError::InvalidRequest(err.to_string()),
+        )
+    })? && let Some("file") = field.name()
     {
         // only certain amount of files per upload
         if entries.len() >= CONFIG.max_file_count {
             for entry in entries {
                 _ = fs::remove_file(CONFIG.root_dir.join(entry.key)).await;
             }
-            return Err(BumAhhError::TooManyFiles(CONFIG.max_file_count));
+            return Err((
+                StatusCode::TOO_MANY_REQUESTS,
+                BumAhhError::TooManyFiles(CONFIG.max_file_count),
+            ));
         }
 
         // check total storage
@@ -45,7 +49,7 @@ pub async fn upload_file(
             for entry in entries {
                 _ = fs::remove_file(CONFIG.root_dir.join(entry.key)).await;
             }
-            return Err(BumAhhError::OutOfStorage);
+            return Err((StatusCode::TOO_MANY_REQUESTS, BumAhhError::OutOfStorage));
         }
 
         // clean filename
@@ -62,29 +66,38 @@ pub async fn upload_file(
 
         // created file
         let filepath = path::Path::new(&CONFIG.root_dir).join(&filename);
-        let mut file = fs::File::create(&filepath).await?;
+        let mut file = fs::File::create(&filepath)
+            .await
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, BumAhhError::IO(e)))?;
 
         // stream in chunks
         let mut file_size: usize = 0;
-        while let Some(chunk) = field
-            .chunk()
-            .await
-            .map_err(|err| BumAhhError::InvalidRequest(err.to_string()))?
-        {
-            file_size = file_size
-                .checked_add(chunk.len())
-                .ok_or_else(|| BumAhhError::FileTooBig(CONFIG.max_file_size))?;
+        while let Some(chunk) = field.chunk().await.map_err(|err| {
+            (
+                StatusCode::BAD_REQUEST,
+                BumAhhError::InvalidRequest(err.to_string()),
+            )
+        })? {
+            file_size = file_size.checked_add(chunk.len()).ok_or_else(|| {
+                (
+                    StatusCode::BAD_REQUEST,
+                    BumAhhError::FileTooBig(CONFIG.max_file_size),
+                )
+            })?;
 
             file.write_all(chunk.as_ref())
                 .await
-                .map_err(BumAhhError::IO)?;
+                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, BumAhhError::IO(e)))?;
 
             if file_size >= CONFIG.max_file_size {
                 for entry in entries {
                     _ = fs::remove_file(CONFIG.root_dir.join(entry.key)).await;
                 }
                 _ = fs::remove_file(filepath).await;
-                return Err(BumAhhError::FileTooBig(CONFIG.max_file_size));
+                return Err((
+                    StatusCode::BAD_REQUEST,
+                    BumAhhError::FileTooBig(CONFIG.max_file_size),
+                ));
             }
         }
 
@@ -119,7 +132,7 @@ pub async fn serve_file(
     State(db): State<DataBase>,
     Path(filename): Path<String>,
     request: axum::extract::Request,
-) -> Result<impl IntoResponse, BumAhhError> {
+) -> Result<impl IntoResponse, (StatusCode, BumAhhError)> {
     match db.get_key(&filename).await {
         Some(entry) => {
             let path = CONFIG.root_dir.join(&entry.key);
@@ -127,10 +140,10 @@ pub async fn serve_file(
             let response = service
                 .oneshot(request)
                 .await
-                .map_err(|_| BumAhhError::FileNotFound)?;
+                .map_err(|_| (StatusCode::NOT_FOUND, BumAhhError::FileNotFound))?;
             Ok(response)
         }
-        None => Err(BumAhhError::FileNotFound),
+        None => Err((StatusCode::NOT_FOUND, BumAhhError::FileNotFound)),
     }
 }
 
@@ -143,15 +156,15 @@ pub async fn delete_file(
     State(db): State<DataBase>,
     Path(filename): Path<String>,
     Query(query): Query<DeleteKey>,
-) -> Result<impl IntoResponse, BumAhhError> {
+) -> Result<impl IntoResponse, (StatusCode, BumAhhError)> {
     let file_entry = db
         .get_key(filename)
         .await
-        .ok_or(BumAhhError::FileNotFound)?;
+        .ok_or((StatusCode::NOT_FOUND, BumAhhError::FileNotFound))?;
     if file_entry.delete_key == query.del_key {
         db.delete_key(&file_entry.key).await;
         return Ok(Html("ok\n"));
     }
 
-    Err(BumAhhError::FileNotFound)
+    Err((StatusCode::NOT_FOUND, BumAhhError::FileNotFound))
 }
