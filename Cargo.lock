@@ -150,6 +150,7 @@ version = "0.1.0"
 dependencies = [
  "askama",
  "axum",
+ "dotenvy",
  "lazy_static",
  "mime_guess",
  "rand",
@@ -194,6 +195,12 @@ checksum = "8b2a41393f66f16b0823bb79094d54ac5fbd34ab292ddafb9a0456ac9f87d201"
 dependencies = [
  "libc",
 ]
+
+[[package]]
+name = "dotenvy"
+version = "0.15.7"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1aaf95b3e5c8f23aa320147307562d361db0ae0d51242340f558153b4eb2439b"
 
 [[package]]
 name = "encoding_rs"

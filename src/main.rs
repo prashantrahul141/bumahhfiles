@@ -6,7 +6,7 @@ mod utils;
 
 use axum::{Router, http::Request, routing::get};
 use state::{CONFIG, DataBase};
-use std::time::Duration;
+use std::{net::SocketAddr, time::Duration};
 use tower_http::{classify::ServerErrorsFailureClass, trace::TraceLayer};
 use tracing::{Span, info, info_span};
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
@@ -14,9 +14,11 @@ use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 use routes::{delete_file, root, serve_file, upload_file};
 use std::fs;
 
-#[tokio::main]
-async fn main() {
-    // setup logging
+fn setup_env() {
+    _ = dotenvy::dotenv();
+}
+
+fn setup_tracing() {
     tracing_subscriber::registry()
         .with(
             tracing_subscriber::EnvFilter::try_from_default_env().unwrap_or_else(|_| {
@@ -29,14 +31,21 @@ async fn main() {
         )
         .with(tracing_subscriber::fmt::layer())
         .init();
+}
 
-    info!("CONFIG = {CONFIG:?}");
-
-    // setup files directory
+fn setup_files_dir() {
     if std::path::Path::exists(&CONFIG.root_dir) {
         fs::remove_dir_all(&CONFIG.root_dir).unwrap();
     }
     _ = fs::create_dir(&CONFIG.root_dir);
+}
+
+#[tokio::main]
+async fn main() {
+    setup_env();
+    setup_tracing();
+    info!("CONFIG = {CONFIG:?}");
+    setup_files_dir();
 
     // app state
     let db = DataBase::default();
