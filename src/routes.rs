@@ -4,10 +4,11 @@ use crate::{
     utils::{BumAhhError, clean_filename, make_url_list, random},
 };
 use axum::{
-    extract::{Multipart, Path, State},
+    extract::{Multipart, Path, Query, State},
     http::HeaderMap,
     response::{Html, IntoResponse},
 };
+use serde::Deserialize;
 use std::path;
 use tokio::{fs, io::AsyncWriteExt};
 use tower::ServiceExt;
@@ -131,4 +132,26 @@ pub async fn serve_file(
         }
         None => Err(BumAhhError::FileNotFound),
     }
+}
+
+#[derive(Deserialize, Debug)]
+pub struct DeleteKey {
+    del_key: String,
+}
+
+pub async fn delete_file(
+    State(db): State<DataBase>,
+    Path(filename): Path<String>,
+    Query(query): Query<DeleteKey>,
+) -> Result<impl IntoResponse, BumAhhError> {
+    let file_entry = db
+        .get_key(filename)
+        .await
+        .ok_or(BumAhhError::FileNotFound)?;
+    if file_entry.delete_key == query.del_key {
+        db.delete_key(&file_entry.key).await;
+        return Ok(Html("ok\n"));
+    }
+
+    Err(BumAhhError::FileNotFound)
 }

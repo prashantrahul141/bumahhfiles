@@ -123,6 +123,10 @@ impl DataBase {
             .collect::<Vec<_>>()
     }
 
+    pub async fn delete_key<S: AsRef<str> + Hash + Debug>(&self, key: &S) -> Option<Arc<DBEntry>> {
+        self.delete(hash_one(key)).await
+    }
+
     pub async fn delete(&self, key: u64) -> Option<Arc<DBEntry>> {
         debug!("deleting entry with key={key}");
         let mut w = self.inner.write().await;

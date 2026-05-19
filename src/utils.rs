@@ -68,20 +68,37 @@ fn make_url_from_key<K: AsRef<str> + Display>(key: K) -> String {
     format!("{}://{}/{}", CONFIG.protocol, CONFIG.host, key)
 }
 
+fn make_del_url<K: AsRef<str> + Display>(key: K, del_id: K) -> String {
+    format!(
+        "{}://{}/d/{}?del_key={}",
+        CONFIG.protocol, CONFIG.host, key, del_id
+    )
+}
+
 pub fn make_url_list(urls: &[DBEntry], html: bool) -> String {
     if !html {
-        urls.iter()
-            .map(|x| format!("{} (~ {:.2} KB)", make_url_from_key(&x.key), x.size / 1024))
-            .collect::<Vec<_>>()
-            .join("\n")
-            + "\n"
+        format!(
+            "url | size | del_key\n{}\n",
+            urls.iter()
+                .map(|x| {
+                    format!(
+                        "{url} (~ {size:.2}KB) ({del_key})",
+                        url = make_url_from_key(&x.key),
+                        size = x.size / 1024,
+                        del_key = x.delete_key
+                    )
+                })
+                .collect::<Vec<_>>()
+                .join("\n")
+        )
     } else {
         urls.iter()
             .map(|x| {
                 format!(
-                    "<a href={url}>{url}</a> (~ {size:.2} KB)",
+                    "<a target='_blank' href={url}>{url}</a> (~ {size:.2}KB) <a target='_blank' href={del_url}>delete</a>",
                     url = make_url_from_key(&x.key),
-                    size = x.size / 1024
+                    size = x.size / 1024,
+                    del_url = make_del_url(&x.key, &x.delete_key)
                 )
             })
             .collect::<Vec<_>>()
