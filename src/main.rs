@@ -4,7 +4,7 @@ mod state;
 mod template;
 mod utils;
 
-use axum::{Router, http::Request, routing::get};
+use axum::{Router, extract::DefaultBodyLimit, http::Request, routing::get};
 use state::{CONFIG, DataBase};
 use std::{net::SocketAddr, time::Duration};
 use tower_http::{classify::ServerErrorsFailureClass, trace::TraceLayer};
@@ -59,6 +59,9 @@ async fn main() {
         .route("/", get(root).post(upload_file))
         .route("/{filename}", get(serve_file).delete(delete_file))
         .route("/d/{filename}", get(delete_file))
+        .layer(DefaultBodyLimit::max(
+            CONFIG.max_file_size * CONFIG.max_file_count * 2,
+        ))
         .layer(
             TraceLayer::new_for_http()
                 .make_span_with(|request: &Request<_>| {
