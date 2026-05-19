@@ -56,7 +56,8 @@ following equation:
 
 max_time = 7 * 24 hrs
 max_size = 200 MB
-time = max_time * (1 - file_size / max_size) ^ e
+min_time = 1 hr
+time = min_time + max_time * (1 - file_size / max_size) ^ e
 
 here's a pretty graph of the above equation:
 
