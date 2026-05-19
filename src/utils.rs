@@ -26,6 +26,8 @@ pub enum BumAhhError {
     TooManyFiles(usize),
     #[error("File not found")]
     FileNotFound,
+    #[error("Storage bucket has reached its limit")]
+    OutOfStorage,
     #[error("unknown data store error")]
     Unknown,
 }

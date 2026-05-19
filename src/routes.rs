@@ -24,6 +24,7 @@ pub async fn upload_file(
     mut form: Multipart,
 ) -> Result<impl IntoResponse, BumAhhError> {
     let mut entries: Vec<DBEntry> = vec![];
+    let mut total_entries_size: u64 = 0;
     while let Some(mut field) = form
         .next_field()
         .await
@@ -36,6 +37,14 @@ pub async fn upload_file(
                 _ = fs::remove_file(CONFIG.root_dir.join(entry.key)).await;
             }
             return Err(BumAhhError::TooManyFiles(CONFIG.max_file_count));
+        }
+
+        // check total storage
+        if db.size().await + total_entries_size >= CONFIG.max_on_disk_storage {
+            for entry in entries {
+                _ = fs::remove_file(CONFIG.root_dir.join(entry.key)).await;
+            }
+            return Err(BumAhhError::OutOfStorage);
         }
 
         // clean filename
@@ -87,6 +96,7 @@ pub async fn upload_file(
             file_size as u64,
             random(5).collect::<String>(),
         ));
+        total_entries_size += file_size as u64;
     }
 
     // in which form the client wants response
