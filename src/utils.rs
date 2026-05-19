@@ -1,7 +1,11 @@
 use std::{
+    env,
+    ffi::OsStr,
+    fmt::Debug,
     fmt::Display,
     hash::{DefaultHasher, Hash, Hasher},
     io,
+    str::FromStr,
 };
 
 use axum::response::IntoResponse;
@@ -116,4 +120,16 @@ pub fn retention_time(file_size: u64) -> f32 {
     CONFIG.max_retention_hrs
         * (1_f32 - (file_size as f32 / (CONFIG.max_file_size / 1000 / 1000) as f32))
             .powf(std::f32::consts::E)
+}
+
+pub fn env_or<E, T>(key: E, default: T) -> T
+where
+    E: AsRef<OsStr>,
+    T: FromStr,
+    <T as FromStr>::Err: Debug,
+{
+    match env::var(key) {
+        Ok(v) => v.parse::<T>().unwrap(),
+        Err(_) => default,
+    }
 }

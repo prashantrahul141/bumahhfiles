@@ -11,7 +11,7 @@ pub fn start_gc(db: DataBase) {
     debug!("starting gc");
     tokio::spawn(async move {
         loop {
-            sleep(CONFIG.gc_run_internal).await;
+            sleep(CONFIG.gc_run_interval).await;
             trigger_gc(db.clone()).await;
         }
     });

@@ -8,7 +8,7 @@ use axum::{Router, http::Request, routing::get};
 use state::{CONFIG, DataBase};
 use std::time::Duration;
 use tower_http::{classify::ServerErrorsFailureClass, trace::TraceLayer};
-use tracing::{Span, info_span};
+use tracing::{Span, info, info_span};
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
 use routes::{delete_file, root, serve_file, upload_file};
@@ -29,6 +29,8 @@ async fn main() {
         )
         .with(tracing_subscriber::fmt::layer())
         .init();
+
+    info!("CONFIG = {CONFIG:?}");
 
     // setup files directory
     if std::path::Path::exists(&CONFIG.root_dir) {

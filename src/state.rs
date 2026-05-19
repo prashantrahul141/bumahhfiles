@@ -8,14 +8,14 @@ use tokio::{fs, sync::RwLock};
 use lazy_static::lazy_static;
 use tracing::debug;
 
-use crate::utils::hash_one;
+use crate::utils::{env_or, hash_one};
 
 #[derive(Debug)]
 pub struct Config {
     pub root_dir: PathBuf,
     pub host: String,
     pub protocol: String,
-    pub gc_run_internal: Duration,
+    pub gc_run_interval: Duration,
     pub max_file_count: usize,
     pub max_filename_length: usize,
     pub max_on_disk_storage: u64,
@@ -26,15 +26,15 @@ pub struct Config {
 impl Default for Config {
     fn default() -> Self {
         Self {
-            root_dir: std::path::PathBuf::from("files"),
-            host: "0.0.0.0:3000".into(),
-            protocol: "http".into(),
-            gc_run_internal: Duration::from_secs(30),
-            max_file_count: 5,
-            max_filename_length: 240,
-            max_on_disk_storage: 10 * 1024 * 1024 * 1024,
-            max_file_size: 200 * 1000 * 1000,
-            max_retention_hrs: 7.0 * 24.0,
+            root_dir: std::path::PathBuf::from(env_or("BUMAHH_ROOT_DIR", "files".to_string())),
+            host: env_or("BUMAHH_HOST", "0.0.0.0:3000".to_string()),
+            protocol: env_or("BUMAHH_PROTOCOL", "http".to_string()),
+            gc_run_interval: Duration::from_mins(env_or("BUMAHH_GC_INTERVAL_MIN", 30)),
+            max_file_count: env_or("BUMAHH_MAX_FILE_COUNT", 5),
+            max_filename_length: env_or("BUMAHH_MAX_FILENAME_LENGTH", 240),
+            max_on_disk_storage: env_or("BUMAHH_MAX_ON_DISK_STORAGE", 15 * 1024 * 1024 * 1024),
+            max_file_size: env_or("BUMAHH_MAX_FILE_SIZE", 200 * 1024 * 1024),
+            max_retention_hrs: env_or("BUMAHH_MAX_RETENTION_HRS", 7.0 * 24.0),
         }
     }
 }
