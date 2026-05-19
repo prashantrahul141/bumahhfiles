@@ -33,7 +33,7 @@ impl Default for Config {
             internal_host: env_or("BUMAHH_INTERNAL_HOST", "0.0.0.0".to_string()),
             internal_port: env_or("BUMAHH_INTERNAL_PORT", 3000),
             external_protocol: env_or("BUMAHH_EXTERNAL_PROTOCOL", "http".to_string()),
-            external_host: env_or("BUMAHH_EXTERNAL_HOST", "0.0.0.0".to_string()),
+            external_host: env_or("BUMAHH_EXTERNAL_HOST", "0.0.0.0:3000".to_string()),
             gc_run_interval: Duration::from_mins(env_or("BUMAHH_GC_INTERVAL_MIN", 30)),
             max_file_count: env_or("BUMAHH_MAX_FILE_COUNT", 5),
             max_filename_length: env_or("BUMAHH_MAX_FILENAME_LENGTH", 240),

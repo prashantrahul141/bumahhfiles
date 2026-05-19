@@ -4,10 +4,18 @@ use axum::{
     response::{Html, IntoResponse, Response},
 };
 
+use crate::state::DBEntry;
+
 #[derive(Template)]
 #[template(path = "index.html")]
 pub struct IndexTemplate {
     pub domain: String,
+}
+
+#[derive(Template)]
+#[template(path = "url_list.html")]
+pub struct UrlListTemplate<'a> {
+    pub entries: &'a [DBEntry],
 }
 
 pub struct HtmlTemplate<T>(pub T);

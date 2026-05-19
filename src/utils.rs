@@ -8,12 +8,16 @@ use std::{
     time::Duration,
 };
 
+use askama::{Error, Template};
 use axum::response::IntoResponse;
 use lazy_static::lazy_static;
 use rand::seq::IndexedRandom;
 use thiserror::Error;
 
-use crate::state::{CONFIG, DBEntry};
+use crate::{
+    state::{CONFIG, DBEntry},
+    template::UrlListTemplate,
+};
 
 #[derive(Error, Debug)]
 #[allow(unused)]
@@ -68,48 +72,47 @@ pub fn random(n: usize) -> rand::seq::IndexedSamples<'static, [char], char> {
     safe_chars.sample(&mut rand::rng(), n)
 }
 
-fn make_url_from_key<K: AsRef<str> + Display>(key: K) -> String {
+pub fn make_url_from_key<K: AsRef<str> + Display>(key: K) -> String {
     format!(
         "{}://{}/{}",
         CONFIG.external_protocol, CONFIG.external_host, key
     )
 }
 
-fn make_del_url<K: AsRef<str> + Display>(key: K, del_id: K) -> String {
+pub fn make_del_url<K: AsRef<str> + Display>(key: K, del_id: K) -> String {
     format!(
         "{}://{}/d/{}?del_key={}",
         CONFIG.external_protocol, CONFIG.external_host, key, del_id
     )
 }
 
-pub fn make_url_list(urls: &[DBEntry], html: bool) -> String {
-    if !html {
-        format!(
-            "url | size | del_key\n{}\n",
-            urls.iter()
-                .map(|x| {
-                    format!(
-                        "{url} (~ {size:.2}KB) ({del_key})",
-                        url = make_url_from_key(&x.key),
-                        size = x.size / 1024,
-                        del_key = x.delete_key
-                    )
-                })
-                .collect::<Vec<_>>()
-                .join("\n")
-        )
-    } else {
+fn make_url_list_raw(urls: &[DBEntry]) -> String {
+    format!(
+        "url | size | delete key | retention time\n{}\n",
         urls.iter()
             .map(|x| {
                 format!(
-                    "<a target='_blank' href={url}>{url}</a> (~ {size:.2}KB) <a target='_blank' href={del_url}>delete</a>",
+                    "{url} | ~{size:.2}KB | {del_key} | <{ret_time}H",
                     url = make_url_from_key(&x.key),
-                    size = x.size / 1024,
-                    del_url = make_del_url(&x.key, &x.delete_key)
+                    size = x.size as f32 / 1024.0,
+                    del_key = x.delete_key,
+                    ret_time = retention_time(x.size).as_secs() / 60 / 60
                 )
             })
             .collect::<Vec<_>>()
-            .join("<br>")
+            .join("\n")
+    )
+}
+
+fn make_url_list_html(entries: &[DBEntry]) -> Result<String, Error> {
+    UrlListTemplate { entries }.render()
+}
+
+pub fn make_url_list(urls: &[DBEntry], html: bool) -> Result<String, Error> {
+    if html {
+        make_url_list_html(urls)
+    } else {
+        Ok(make_url_list_raw(urls))
     }
 }
 

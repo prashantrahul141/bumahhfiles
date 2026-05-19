@@ -11,7 +11,7 @@ Configuration can be done via environment variables
 | BUMAHH_INTERNAL_HOST       | "0.0.0.0"          | where to listen               |
 | BUMAHH_INTERNAL_PORT       | 3000               | which port to listen          |
 | BUMAHH_EXTERNAL_PROTOCOL   | "http"             | used to format links          |
-| BUMAHH_EXTERNAL_HOST       | "0.0.0.0"          | used to format links          |
+| BUMAHH_EXTERNAL_HOST       | "0.0.0.0:3000"     | used to format links          |
 | BUMAHH_GC_INTERVAL_MIN     | 30                 | garbage collection interval   |
 | BUMAHH_MAX_FILE_COUNT      | 5                  | max file upload count per req |
 | BUMAHH_MAX_FILENAME_LENGTH | 240                | max filename in storage       |

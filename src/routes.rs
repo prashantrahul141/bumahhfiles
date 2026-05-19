@@ -140,7 +140,16 @@ pub async fn upload_file(
         .is_some_and(|f| f.contains("html"));
 
     // add to db, return.
-    let response = Html(make_url_list(&entries, accepts_html));
+    let response = Html(
+        make_url_list(&entries, accepts_html)
+            .inspect_err(|e| error!("failed rendering template: {e}"))
+            .map_err(|_| {
+                (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    BumAhhError::Internal("Failed to render template".to_string()),
+                )
+            })?,
+    );
     db.insert_mul(entries.into_iter()).await;
     Ok(response)
 }

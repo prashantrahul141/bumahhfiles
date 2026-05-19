@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>here are your files</title>
+    <meta name="title" content="here are your files" />
+    <meta name="description" content="easy temporary files" />
+    <style>
+      @media (prefers-color-scheme: light) {
+        body {
+          background: #fbf1c7;
+          color: #3c3836;
+        }
+
+        a {
+          color: #b57614;
+        }
+      }
+      @media (prefers-color-scheme: dark) {
+        body {
+          background: #282828;
+          color: #ebdbb2;
+        }
+
+        a {
+          color: #d79921;
+        }
+      }
+    </style>
+  </head>
+
+  <body></body>
+  <p>url | size | retention time | delete </p>
+  {% for entry in entries %}
+  {% let url = crate::utils::make_url_from_key(&entry.key) %}
+    <a target='_blank' href="{{ url }}">{{ url }}</a> |
+    ~{{ format!("{:.2}KB", entry.size as f32 / 1024.0) }} |
+    {{ crate::utils::retention_time(*entry.size).as_secs() / 60 / 60 }}H |
+    <a target='_blank' href="{{ crate::utils::make_del_url(entry.key, entry.delete_key) }}">delete</a>
+    <br>
+  {% endfor %}
+</html>
