@@ -15,7 +15,11 @@ use routes::{delete_file, root, serve_file, upload_file};
 use std::fs;
 
 fn setup_env() {
-    _ = dotenvy::dotenv();
+    if dotenvy::dotenv().is_ok() {
+        println!("loaded env");
+    } else {
+        eprintln!("failed to load env");
+    }
 }
 
 fn setup_tracing() {
