@@ -1,6 +1,6 @@
 use crate::{
     state::{CONFIG, DBEntry, DataBase},
-    template::{HtmlTemplate, IndexTemplate},
+    template::{HtmlTemplate, IndexTemplate, Stat},
     utils::{BumAhhError, clean_filename, clean_files, limit_filename_len, make_url_list, random},
 };
 use axum::{
@@ -14,8 +14,13 @@ use tokio::{fs, io::AsyncWriteExt};
 use tower::ServiceExt;
 use tracing::{error, warn};
 
-pub async fn root() -> impl IntoResponse {
+pub async fn root(State(db): State<DataBase>) -> impl IntoResponse {
+    let stat = Some(Stat {
+        files_serving_count: db.len().await,
+        storage_used_percent: (db.size().await * 100 / CONFIG.max_on_disk_storage).min(100),
+    });
     HtmlTemplate(IndexTemplate {
+        stat,
         domain: format!("{}://{}", CONFIG.external_protocol, CONFIG.external_host),
     })
 }

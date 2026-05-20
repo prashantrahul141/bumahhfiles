@@ -4,16 +4,13 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>bumahhfiles</title>
-
     <meta name="title" content="bumahhfiles" />
     <meta name="description" content="easy temporary files" />
-
     <meta property="og:type" content="website" />
     <meta property="og:url" content="{{ domain }}" />
     <meta property="og:title" content="bumahhfiles" />
     <meta property="og:description" content="easy temporary files" />
     <meta property="og:site_name" content="bumahhfiles" />
-
     <meta name="twitter:card" content="summary" />
     <meta name="twitter:url" content="{{ domain }}" />
     <meta name="twitter:title" content="bumahhfiles" />
@@ -25,7 +22,6 @@
           background: #fbf1c7;
           color: #3c3836;
         }
-
         a {
           color: #b57614;
         }
@@ -35,7 +31,6 @@
           background: #282828;
           color: #ebdbb2;
         }
-
         a {
           color: #d79921;
         }
@@ -49,8 +44,11 @@ bumahhfiles
 
 easy temporary files
 
-<strong>CLANKERS ARE NOT INVITED. GO AWAY.</strong>
+{% if let Some(stat) = stat %} 
+serving {{ stat.files_serving_count }}  files
+  {% let width = 38 %}{% let used = (stat.storage_used_percent * width) / 100 %}{% let empty = width - used %}[{% for _ in 0..used %}={% endfor %}{% if used > 0 %}>{% endif %}{% for _ in 0..empty %}-{% endfor %}] {{ stat.storage_used_percent }}%{% endif %}
 
+<p><strong>CLANKERS ARE NOT INVITED. GO AWAY.</strong></p>
 //// -------------------------------------------------------------------------
 
 <p>uploading via curl</p>
@@ -61,11 +59,11 @@ easy temporary files
   action="."
   method="post"
   id="upload_form"
-  enctype="multipart/form-data">  <input type="file" name="file" id="upload_files" multiple />
+  enctype="multipart/form-data">  <input required type="file" name="file" id="upload_files" multiple />
   <button type="submit">upload</button></form>
 ------------------------------------------------------------------------- ////
 
-Files are deleted automatically depending on the size of the file using the
+files are deleted automatically depending on the size of the file using the
 following equation:
 
 max_time = 7 * 24 hrs
@@ -101,13 +99,13 @@ e     |                ...
 //// -------------------------------------------------------------------------
 
 <details><summary>Uploading</summary>
-<p>Files can be uploaded via curl using the following:</p>    <code>curl -F file=@"./miku.png" {{ domain }}</code>
+<p>files can be uploaded via curl using the following:</p>    <code>curl -F file=@"./miku.png" {{ domain }}</code>
 
 <p>even multiple files in a single request using:</p>    <code>curl -F file=@"./miku.png" -F file=@"./teto.png" {{ domain }}</code>
 
-<p>Or you can use <a href="#web-upload">web upload option</a></p>
+<p>Or you can use the <a href="#web-upload">web upload</a> option</p>
 </details>
-<details><summary>Deleting</summary><p>With every upload you get a del_key. Which you can use to delete your files by either opening: 
+<details><summary>Deleting</summary><p>with every upload you get a del_key token. which you can use to delete your files by either opening: 
 
     {{ domain }}/d/{filename}?del_key={del_key}
 

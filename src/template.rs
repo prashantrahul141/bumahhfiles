@@ -6,10 +6,16 @@ use axum::{
 
 use crate::state::DBEntry;
 
+pub struct Stat {
+    pub files_serving_count: usize,
+    pub storage_used_percent: u64,
+}
+
 #[derive(Template)]
 #[template(path = "index.html")]
 pub struct IndexTemplate {
     pub domain: String,
+    pub stat: Option<Stat>,
 }
 
 #[derive(Template)]
