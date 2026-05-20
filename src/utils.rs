@@ -68,6 +68,39 @@ pub fn clean_filename<S: AsRef<str>>(filename: S) -> String {
         .collect::<String>()
 }
 
+fn truncate<S: AsRef<str>>(s: S, n: usize) -> String {
+    s.as_ref().chars().take(n).collect()
+}
+
+pub fn limit_filename_len<S: AsRef<str>>(filename: S, max_len: usize) -> String {
+    let filename = filename.as_ref();
+
+    if filename.chars().count() <= max_len {
+        return filename.to_string();
+    }
+
+    let (stem, ext) = match filename.rsplit_once('.') {
+        Some((stem, ext)) => (stem, Some(ext)),
+        None => (filename, None),
+    };
+
+    match ext {
+        Some(ext) => {
+            let ext_len = ext.chars().count() + 1;
+
+            if ext_len >= max_len {
+                return format!(".{}", truncate(ext, max_len.saturating_sub(1)));
+            }
+
+            let allowed_stem_len = max_len - ext_len;
+
+            format!("{}.{}", truncate(stem, allowed_stem_len), ext)
+        }
+
+        None => truncate(filename, max_len),
+    }
+}
+
 pub fn random(n: usize) -> rand::seq::IndexedSamples<'static, [char], char> {
     safe_chars.sample(&mut rand::rng(), n)
 }
@@ -154,5 +187,29 @@ pub fn clean_file(file: &DBEntry) {
 pub fn clean_files(files: &[DBEntry]) {
     for file in files {
         clean_file(file);
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_limit_filename_len() {
+        let name_expected = vec![
+            (".dotfile", ".dotfile"),
+            (".dotfileswithareallylongname", ".dotfilesw"),
+            ("nodots", "nodots"),
+            ("nodotsbutareallylongname", "nodotsbuta"),
+            ("normal.mp4", "normal.mp4"),
+            ("nor.norm.mp4", "nor.no.mp4"),
+            ("...............", ".........."),
+            ("n.n.n.n.n.n.n.n.n.n.n.n.n", "n.n.n.n..n"),
+            ("n.n.n.n.n.n.n.n.n.n.n.n.", "n.n.n.n.n."),
+        ];
+        for (name, expected) in name_expected {
+            let was = limit_filename_len(name, 10);
+            assert_eq!(expected, was);
+        }
     }
 }

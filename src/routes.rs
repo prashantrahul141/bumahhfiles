@@ -1,7 +1,7 @@
 use crate::{
     state::{CONFIG, DBEntry, DataBase},
     template::{HtmlTemplate, IndexTemplate},
-    utils::{BumAhhError, clean_filename, clean_files, make_url_list, random},
+    utils::{BumAhhError, clean_filename, clean_files, limit_filename_len, make_url_list, random},
 };
 use axum::{
     extract::{Multipart, Path, Query, State},
@@ -54,17 +54,13 @@ pub async fn upload_file(
             return Err((StatusCode::TOO_MANY_REQUESTS, BumAhhError::OutOfStorage));
         }
 
-        // clean filename
-        let mut filename = field
+        // clean & limit len of  filename
+        let filename = field
             .file_name()
             .map_or(random(5).collect::<String>(), |x| {
                 format!("{}-{}", random(5).collect::<String>(), clean_filename(x))
             });
-
-        // limited file name length
-        if filename.len() > CONFIG.max_filename_length {
-            filename = filename[0..CONFIG.max_filename_length].to_string();
-        }
+        let filename = limit_filename_len(filename, CONFIG.max_filename_length);
 
         // created file
         let filepath = path::Path::new(&CONFIG.root_dir).join(&filename);
