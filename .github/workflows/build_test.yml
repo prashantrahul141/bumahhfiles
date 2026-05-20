@@ -10,6 +10,7 @@ on:
 
 env:
   CARGO_TERM_COLOR: always
+  GIT_HASH: $(git rev-parse --short "$GITHUB_SHA")
 
 jobs:
   build_test:
@@ -26,7 +27,6 @@ jobs:
       with:
         submodules: 'recursive'
         fetch-depth: 1
-
     - name: Build
       run: cargo build --verbose
     - name: Run tests
