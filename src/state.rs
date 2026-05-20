@@ -87,6 +87,10 @@ pub struct DataBase {
 
 #[allow(unused)]
 impl DataBase {
+    pub async fn len(&self) -> usize {
+        self.inner.read().await.entries.len()
+    }
+
     pub async fn size(&self) -> u64 {
         self.inner.read().await.size
     }
