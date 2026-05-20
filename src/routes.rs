@@ -18,6 +18,7 @@ pub async fn root(State(db): State<DataBase>) -> impl IntoResponse {
     let stat = Some(Stat {
         files_serving_count: db.len().await,
         storage_used_percent: (db.size().await * 100 / CONFIG.max_on_disk_storage).min(100),
+        version: CONFIG.version,
     });
     HtmlTemplate(IndexTemplate {
         stat,

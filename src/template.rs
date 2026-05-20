@@ -9,6 +9,7 @@ use crate::state::DBEntry;
 pub struct Stat {
     pub files_serving_count: usize,
     pub storage_used_percent: u64,
+    pub version: &'static str,
 }
 
 #[derive(Template)]

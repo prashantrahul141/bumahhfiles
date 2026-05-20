@@ -51,7 +51,7 @@ fn setup_files_dir() {
 async fn main() {
     setup_env();
     setup_tracing();
-    info!("CONFIG = {CONFIG:?}");
+    info!("config = {CONFIG:?}");
     setup_files_dir();
 
     // app state

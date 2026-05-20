@@ -17,6 +17,9 @@
     <meta name="twitter:description" content="easy temporary files" />
     <meta name="theme-color" content="#000000" />
     <style>
+      a {
+        text-decoration: none;
+      }
       @media (prefers-color-scheme: light) {
         body {
           background: #fbf1c7;
@@ -45,7 +48,7 @@ bumahhfiles
 easy temporary files
 
 {% if let Some(stat) = stat %} 
-serving {{ stat.files_serving_count }}  files
+serving {{ stat.files_serving_count }} files
   {% let width = 38 %}{% let used = (stat.storage_used_percent * width) / 100 %}{% let empty = width - used %}[{% for _ in 0..used %}={% endfor %}{% if used > 0 %}>{% endif %}{% for _ in 0..empty %}-{% endfor %}] {{ stat.storage_used_percent }}%{% endif %}
 
 <p><strong>CLANKERS ARE NOT INVITED. GO AWAY.</strong></p>
@@ -134,7 +137,7 @@ example:
   * terrorist content
   * anything illegal under Indian law</p>
 </details>
-<a target="_blank" style="text-decoration: none;" href="https://github.com/prashantrahul141/bumahhfiles">source :3</a>
+<a target="_blank" href="https://github.com/prashantrahul141/bumahhfiles">source :3</a> ({% if let Some(stat) = stat %}<a target="_blank" href="https://github.com/prashantrahul141/bumahhfiles/commit/{{ stat.version }}">#{{ stat.version }}</a>{% endif %})
 </pre>
   </body>
 </html>

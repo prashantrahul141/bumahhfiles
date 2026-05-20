@@ -38,11 +38,22 @@
         craneLib = (crane.mkLib pkgs).overrideToolchain toolchain;
         src = ./.;
 
+        GIT_HASH = builtins.substring 0 7 (
+          builtins.replaceStrings [ "-dirty" ] [ "" ] (
+            if self ? rev then
+              self.rev
+            else if self ? dirtyRev then
+              self.dirtyRev
+            else
+              "dirty"
+          )
+        );
+
         commonArgs = { inherit src; };
 
         cargoArtifacts = craneLib.buildDepsOnly commonArgs;
         package = craneLib.buildPackage {
-          inherit cargoArtifacts src;
+          inherit cargoArtifacts src GIT_HASH;
           doCheck = false;
         };
       in
@@ -85,6 +96,7 @@
         };
 
         devShells.default = pkgs.mkShell {
+          inherit GIT_HASH;
           nativeBuildInputs = [ toolchain ];
         };
 
