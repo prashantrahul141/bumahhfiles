@@ -1,7 +1,7 @@
 use crate::{
     state::{CONFIG, DBEntry, DataBase},
     template::{HtmlTemplate, IndexTemplate},
-    utils::{BumAhhError, clean_filename, make_url_list, random},
+    utils::{BumAhhError, clean_filename, clean_files, make_url_list, random},
 };
 use axum::{
     extract::{Multipart, Path, Query, State},
@@ -40,9 +40,7 @@ pub async fn upload_file(
                 "tried to upload more than {} files in a single request",
                 CONFIG.max_file_count
             );
-            for entry in entries {
-                _ = fs::remove_file(CONFIG.root_dir.join(entry.key)).await;
-            }
+            clean_files(&entries);
             return Err((
                 StatusCode::TOO_MANY_REQUESTS,
                 BumAhhError::TooManyFiles(CONFIG.max_file_count),
@@ -52,9 +50,7 @@ pub async fn upload_file(
         // check total storage
         if db.size().await + total_entries_size >= CONFIG.max_on_disk_storage {
             error!("storage bucket limit reached");
-            for entry in entries {
-                _ = fs::remove_file(CONFIG.root_dir.join(entry.key)).await;
-            }
+            clean_files(&entries);
             return Err((StatusCode::TOO_MANY_REQUESTS, BumAhhError::OutOfStorage));
         }
 
@@ -74,7 +70,10 @@ pub async fn upload_file(
         let filepath = path::Path::new(&CONFIG.root_dir).join(&filename);
         let mut file = fs::File::create(&filepath)
             .await
-            .inspect_err(|e| error!("failed to create file: {e}"))
+            .inspect_err(|e| {
+                clean_files(&entries);
+                error!("failed to create file: {e}");
+            })
             .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, BumAhhError::IO(e)))?;
 
         // stream in chunks
@@ -82,7 +81,10 @@ pub async fn upload_file(
         while let Some(chunk) = field
             .chunk()
             .await
-            .inspect_err(|e| error!("failed to get next chunk: {e}"))
+            .inspect_err(|e| {
+                clean_files(&entries);
+                error!("failed to get next chunk: {e}");
+            })
             .map_err(|err| {
                 (
                     StatusCode::BAD_REQUEST,
@@ -90,26 +92,31 @@ pub async fn upload_file(
                 )
             })?
         {
+            // increment current file size
             file_size = file_size.checked_add(chunk.len()).ok_or_else(|| {
+                clean_files(&entries);
                 (
                     StatusCode::BAD_REQUEST,
                     BumAhhError::FileTooBig(CONFIG.max_file_size),
                 )
             })?;
 
+            // write chunk
             file.write_all(chunk.as_ref())
                 .await
-                .inspect_err(|e| error!("failed to write to file : {e}"))
+                .inspect_err(|e| {
+                    clean_files(&entries);
+                    error!("failed to write to file : {e}")
+                })
                 .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, BumAhhError::IO(e)))?;
 
+            // too big of a file?
             if file_size >= CONFIG.max_file_size {
                 warn!(
                     "tried uploading a rather huge file >{}KB",
                     CONFIG.max_file_size / 1024
                 );
-                for entry in entries {
-                    _ = fs::remove_file(CONFIG.root_dir.join(entry.key)).await;
-                }
+                clean_files(&entries);
                 _ = fs::remove_file(filepath).await;
                 return Err((
                     StatusCode::BAD_REQUEST,
@@ -142,7 +149,10 @@ pub async fn upload_file(
     // add to db, return.
     let response = Html(
         make_url_list(&entries, accepts_html)
-            .inspect_err(|e| error!("failed rendering template: {e}"))
+            .inspect_err(|e| {
+                clean_files(&entries);
+                error!("failed rendering template: {e}")
+            })
             .map_err(|_| {
                 (
                     StatusCode::INTERNAL_SERVER_ERROR,

@@ -22,21 +22,21 @@ use crate::{
 #[derive(Error, Debug)]
 #[allow(unused)]
 pub enum BumAhhError {
-    #[error("I/O Error")]
+    #[error("I/O Error\n")]
     IO(#[from] io::Error),
-    #[error("Internal Error")]
+    #[error("Internal Error\n")]
     Internal(String),
-    #[error("Invalid Request: {0}")]
+    #[error("Invalid Request: {0}\n")]
     InvalidRequest(String),
-    #[error("File too big, max file size in bytes: {0} bytes")]
+    #[error("File too big, max file size in bytes: {0} bytes\n")]
     FileTooBig(usize),
-    #[error("Too many files, allowed a maximum of: {0}")]
+    #[error("Too many files, allowed a maximum of: {0}\n")]
     TooManyFiles(usize),
-    #[error("File not found")]
+    #[error("File not found\n")]
     FileNotFound,
-    #[error("Storage bucket has reached its limit")]
+    #[error("Storage bucket has reached its limit\n")]
     OutOfStorage,
-    #[error("unknown data store error")]
+    #[error("unknown data store error\n")]
     Unknown,
 }
 
@@ -144,5 +144,15 @@ where
     match env::var(key) {
         Ok(v) => v.parse::<T>().unwrap(),
         Err(_) => default,
+    }
+}
+
+pub fn clean_file(file: &DBEntry) {
+    _ = std::fs::remove_file(CONFIG.root_dir.join(&file.key));
+}
+
+pub fn clean_files(files: &[DBEntry]) {
+    for file in files {
+        clean_file(file);
     }
 }
