@@ -37,7 +37,7 @@
     <a target='_blank' href="{{ url }}">{{ url }}</a> |
     ~{{ format!("{:.2}KB", entry.size as f32 / 1024.0) }} |
     {{ crate::utils::retention_time(*entry.size).as_secs() / 60 / 60 }}H |
-    <a target='_blank' href="{{ crate::utils::make_del_url(entry.key, entry.delete_key) }}">delete</a>
+    <a target='_blank' href="{{ crate::utils::make_del_url(entry) }}">delete</a>
     <br>
   {% endfor %}
 </html>

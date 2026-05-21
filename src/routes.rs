@@ -138,11 +138,7 @@ pub async fn upload_file(
         }
 
         // push to entries
-        entries.push(DBEntry::new(
-            filename,
-            file_size as u64,
-            random(5).collect::<String>(),
-        ));
+        entries.push(DBEntry::new(filename, file_size as u64));
         total_entries_size += file_size as u64;
     }
 
@@ -199,7 +195,7 @@ pub async fn delete_file(
         .get_key(filename)
         .await
         .ok_or((StatusCode::NOT_FOUND, BumAhhError::FileNotFound))?;
-    if file_entry.delete_key == query.del_key {
+    if file_entry.delete_key() == query.del_key {
         db.delete_key(&file_entry.key).await;
         return Ok(Html("ok\n"));
     }

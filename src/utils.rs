@@ -108,10 +108,13 @@ pub fn make_url_from_key<K: AsRef<str> + Display>(key: K) -> String {
     )
 }
 
-pub fn make_del_url<K: AsRef<str> + Display>(key: K, del_id: K) -> String {
+pub fn make_del_url(entry: &DBEntry) -> String {
     format!(
         "{}://{}/d/{}?del_key={}",
-        CONFIG.external_protocol, CONFIG.external_host, key, del_id
+        CONFIG.external_protocol,
+        CONFIG.external_host,
+        entry.key,
+        entry.delete_key()
     )
 }
 

@@ -25,6 +25,7 @@ pub struct Config {
     pub max_retention_hrs: f32,
     pub min_retention_hrs: f32,
     pub version: &'static str,
+    pub magic_key: String,
 }
 
 impl Default for Config {
@@ -42,6 +43,7 @@ impl Default for Config {
             max_file_size: env_or("BUMAHH_MAX_FILE_SIZE", 200 * 1024 * 1024),
             max_retention_hrs: env_or("BUMAHH_MAX_RETENTION_HRS", 7.0 * 24.0),
             min_retention_hrs: env_or("BUMAHH_MIN_RETENTION_HRS", 1.0),
+            magic_key: env_or("BUMAHH_MAGIC_KEY", "magic-key".to_string()),
             version: env!("GIT_HASH"),
         }
     }
@@ -62,17 +64,22 @@ pub struct DBEntry {
     pub key: String,
     pub size: u64,
     pub created_at: SystemTime,
-    pub delete_key: String,
 }
 
 impl DBEntry {
-    pub fn new(key: String, size: u64, delete_key: String) -> Self {
+    pub fn new(key: String, size: u64) -> Self {
         Self {
             key,
             size,
             created_at: SystemTime::now(),
-            delete_key,
         }
+    }
+
+    pub fn delete_key(&self) -> String {
+        format!(
+            "{:X}",
+            hash_one(&format!("{}{}", self.key, CONFIG.magic_key)) as u16
+        )
     }
 }
 
