@@ -96,6 +96,15 @@ pub struct DataBase {
 
 #[allow(unused)]
 impl DataBase {
+    pub async fn from<T>(value: T) -> Self
+    where
+        T: Iterator<Item = DBEntry> + Debug,
+    {
+        let db = DataBase::default();
+        db.insert_mul(value).await;
+        db
+    }
+
     pub async fn len(&self) -> usize {
         self.inner.read().await.entries.len()
     }

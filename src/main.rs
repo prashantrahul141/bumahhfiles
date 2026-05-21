@@ -8,11 +8,13 @@ use axum::{Router, extract::DefaultBodyLimit, http::Request, response::Response,
 use state::{CONFIG, DataBase};
 use std::{net::SocketAddr, time::Duration};
 use tower_http::{classify::ServerErrorsFailureClass, trace::TraceLayer};
-use tracing::{Span, info};
+use tracing::{Span, debug, info};
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
 use routes::{delete_file, root, serve_file, stat, upload_file};
 use std::fs;
+
+use crate::state::DBEntry;
 
 fn setup_env() {
     if dotenvy::dotenv().is_ok() {
@@ -38,13 +40,30 @@ fn setup_tracing() {
     info!("logging setup done")
 }
 
-fn setup_files_dir() {
+fn setup_files_dir() -> Vec<DBEntry> {
     if std::path::Path::exists(&CONFIG.root_dir) {
-        info!("files directory exists, deleting it.");
-        fs::remove_dir_all(&CONFIG.root_dir).unwrap();
+        info!(
+            "files directory exists path={:?}, querying it.",
+            CONFIG.root_dir
+        );
+        let dir = fs::read_dir(&CONFIG.root_dir).unwrap();
+        let mut entries = vec![];
+        for file in dir {
+            if let Ok(file) = file
+                && let Ok(metadata) = file.metadata()
+                && let Ok(name) = file.file_name().into_string()
+            {
+                entries.push(DBEntry::new(name, metadata.len()));
+            }
+        }
+        return entries;
     }
-    info!("creating new files directory at path={:?}", CONFIG.root_dir);
+    info!(
+        "files directory doesnt exist, creating new at path={:?}",
+        CONFIG.root_dir
+    );
     _ = fs::create_dir(&CONFIG.root_dir);
+    vec![]
 }
 
 #[tokio::main]
@@ -52,10 +71,12 @@ async fn main() {
     setup_env();
     setup_tracing();
     info!("config = {CONFIG:?}");
-    setup_files_dir();
+
+    let existing_files = setup_files_dir();
+    debug!("found {:?} existing files", existing_files.len());
 
     // app state
-    let db = DataBase::default();
+    let db = DataBase::from(existing_files.into_iter()).await;
 
     // axum app
     let app = Router::new()
