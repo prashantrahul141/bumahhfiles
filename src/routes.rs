@@ -138,7 +138,7 @@ pub async fn upload_file(
         }
 
         // push to entries
-        entries.push(DBEntry::new(filename, file_size as u64));
+        entries.push(DBEntry::new(filename, file_size as u64, None));
         total_entries_size += file_size as u64;
     }
 

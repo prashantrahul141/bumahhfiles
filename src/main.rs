@@ -53,7 +53,7 @@ fn setup_files_dir() -> Vec<DBEntry> {
                 && let Ok(metadata) = file.metadata()
                 && let Ok(name) = file.file_name().into_string()
             {
-                entries.push(DBEntry::new(name, metadata.len()));
+                entries.push(DBEntry::new(name, metadata.len(), metadata.created().ok()));
             }
         }
         return entries;

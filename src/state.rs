@@ -67,11 +67,11 @@ pub struct DBEntry {
 }
 
 impl DBEntry {
-    pub fn new(key: String, size: u64) -> Self {
+    pub fn new(key: String, size: u64, created_at: Option<SystemTime>) -> Self {
         Self {
             key,
             size,
-            created_at: SystemTime::now(),
+            created_at: created_at.unwrap_or(SystemTime::now()),
         }
     }
 
