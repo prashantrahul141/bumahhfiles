@@ -1,7 +1,7 @@
 use crate::{
     state::{CONFIG, DBEntry, DataBase},
-    template::{HtmlTemplate, IndexTemplate, Stat},
-    utils::{BumAhhError, clean_filename, clean_files, limit_filename_len, make_url_list, random},
+    template::{HtmlTemplate, IndexTemplate, Stat, UrlListRawTemplate, UrlListTemplate},
+    utils::{BumAhhError, clean_filename, clean_files, limit_filename_len, random},
 };
 use axum::{
     extract::{Multipart, Path, Query, State},
@@ -148,22 +148,14 @@ pub async fn upload_file(
         .and_then(|s| s.to_str().ok())
         .is_some_and(|f| f.contains("html"));
 
-    // add to db, return.
-    let response = Html(
-        make_url_list(&entries, accepts_html)
-            .inspect_err(|e| {
-                clean_files(&entries);
-                error!("failed rendering template: {e}")
-            })
-            .map_err(|_| {
-                (
-                    StatusCode::INTERNAL_SERVER_ERROR,
-                    BumAhhError::Internal("Failed to render template".to_string()),
-                )
-            })?,
-    );
+    let res = if accepts_html {
+        HtmlTemplate(UrlListTemplate { entries: &entries }).into_response()
+    } else {
+        HtmlTemplate(UrlListRawTemplate { entries: &entries }).into_response()
+    };
+
     db.insert_mul(entries.into_iter()).await;
-    Ok(response)
+    Ok(res)
 }
 
 pub async fn serve_file(

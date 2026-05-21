@@ -8,16 +8,12 @@ use std::{
     time::Duration,
 };
 
-use askama::{Error, Template};
 use axum::response::IntoResponse;
 use lazy_static::lazy_static;
 use rand::seq::IndexedRandom;
 use thiserror::Error;
 
-use crate::{
-    state::{CONFIG, DBEntry},
-    template::UrlListTemplate,
-};
+use crate::state::{CONFIG, DBEntry};
 
 #[derive(Error, Debug)]
 #[allow(unused)]
@@ -117,36 +113,6 @@ pub fn make_del_url<K: AsRef<str> + Display>(key: K, del_id: K) -> String {
         "{}://{}/d/{}?del_key={}",
         CONFIG.external_protocol, CONFIG.external_host, key, del_id
     )
-}
-
-fn make_url_list_raw(urls: &[DBEntry]) -> String {
-    format!(
-        "url | size | delete key | retention time\n{}\n",
-        urls.iter()
-            .map(|x| {
-                format!(
-                    "{url} | ~{size:.2}KB | {del_key} | <{ret_time}H",
-                    url = make_url_from_key(&x.key),
-                    size = x.size as f32 / 1024.0,
-                    del_key = x.delete_key,
-                    ret_time = retention_time(x.size).as_secs() / 60 / 60
-                )
-            })
-            .collect::<Vec<_>>()
-            .join("\n")
-    )
-}
-
-fn make_url_list_html(entries: &[DBEntry]) -> Result<String, Error> {
-    UrlListTemplate { entries }.render()
-}
-
-pub fn make_url_list(urls: &[DBEntry], html: bool) -> Result<String, Error> {
-    if html {
-        make_url_list_html(urls)
-    } else {
-        Ok(make_url_list_raw(urls))
-    }
 }
 
 pub fn hash_one<T: Hash>(t: &T) -> u64 {

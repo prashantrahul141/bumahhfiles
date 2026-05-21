@@ -25,6 +25,12 @@ pub struct UrlListTemplate<'a> {
     pub entries: &'a [DBEntry],
 }
 
+#[derive(Template)]
+#[template(path = "url_list_raw.html")]
+pub struct UrlListRawTemplate<'a> {
+    pub entries: &'a [DBEntry],
+}
+
 pub struct HtmlTemplate<T>(pub T);
 
 impl<T> IntoResponse for HtmlTemplate<T>
