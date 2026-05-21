@@ -3,11 +3,15 @@ use axum::{
     http::StatusCode,
     response::{Html, IntoResponse, Response},
 };
+use serde::Serialize;
 
 use crate::state::DBEntry;
 
+#[derive(Serialize)]
 pub struct Stat {
     pub files_serving_count: usize,
+    pub storage_taken: u64,
+    pub total_storage: u64,
     pub storage_used_percent: u64,
     pub version: &'static str,
 }

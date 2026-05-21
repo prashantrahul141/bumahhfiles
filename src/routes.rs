@@ -4,6 +4,7 @@ use crate::{
     utils::{BumAhhError, clean_filename, clean_files, limit_filename_len, random},
 };
 use axum::{
+    Json,
     extract::{Multipart, Path, Query, State},
     http::{HeaderMap, StatusCode},
     response::{Html, IntoResponse},
@@ -15,9 +16,12 @@ use tower::ServiceExt;
 use tracing::{error, warn};
 
 pub async fn root(State(db): State<DataBase>) -> impl IntoResponse {
+    let total_storage = db.size().await;
     let stat = Some(Stat {
         files_serving_count: db.len().await,
-        storage_used_percent: (db.size().await * 100 / CONFIG.max_on_disk_storage).min(100),
+        total_storage: CONFIG.max_on_disk_storage,
+        storage_taken: total_storage,
+        storage_used_percent: (total_storage * 100 / CONFIG.max_on_disk_storage).min(100),
         version: CONFIG.version,
     });
     HtmlTemplate(IndexTemplate {
@@ -201,4 +205,18 @@ pub async fn delete_file(
     }
 
     Err((StatusCode::NOT_FOUND, BumAhhError::FileNotFound))
+}
+
+pub async fn stat(
+    State(db): State<DataBase>,
+) -> Result<impl IntoResponse, (StatusCode, BumAhhError)> {
+    let total_storage = db.size().await;
+    let stat = Some(Stat {
+        files_serving_count: db.len().await,
+        total_storage: CONFIG.max_on_disk_storage,
+        storage_taken: total_storage,
+        storage_used_percent: (total_storage * 100 / CONFIG.max_on_disk_storage).min(100),
+        version: CONFIG.version,
+    });
+    Ok(Json(stat))
 }

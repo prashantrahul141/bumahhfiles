@@ -11,7 +11,7 @@ use tower_http::{classify::ServerErrorsFailureClass, trace::TraceLayer};
 use tracing::{Span, info};
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
-use routes::{delete_file, root, serve_file, upload_file};
+use routes::{delete_file, root, serve_file, stat, upload_file};
 use std::fs;
 
 fn setup_env() {
@@ -60,6 +60,7 @@ async fn main() {
     // axum app
     let app = Router::new()
         .route("/", get(root).post(upload_file))
+        .route("/stat", get(stat))
         .route("/{filename}", get(serve_file).delete(delete_file))
         .route("/d/{filename}", get(delete_file))
         .layer(DefaultBodyLimit::max(
