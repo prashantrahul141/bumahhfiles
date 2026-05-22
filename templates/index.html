@@ -17,26 +17,28 @@
     <meta name="twitter:description" content="easy temporary files" />
     <meta name="theme-color" content="#000000" />
     <style>
-      a {
-        text-decoration: none;
-      }
       @media (prefers-color-scheme: light) {
-        body {
-          background: #fbf1c7;
-          color: #3c3836;
-        }
-        a {
-          color: #b57614;
+        * {
+          --bg: #fbf1c7;
+          --pr: #3c3836;
+          --link: #b57614;
         }
       }
       @media (prefers-color-scheme: dark) {
-        body {
-          background: #282828;
-          color: #ebdbb2;
+        * {
+          --bg: #282828;
+          --pr: #ebdbb2;
+          --link: #d79921;
         }
-        a {
-          color: #d79921;
-        }
+      }
+
+      body {
+        background: var(--bg);
+        color: var(--pr);
+      }
+      a {
+        text-decoration: none;
+        color: var(--link);
       }
     </style>
   </head>
