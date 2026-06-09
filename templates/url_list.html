@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>here are your files</title>
+    <meta name="title" content="here are your files" />
+    <meta name="description" content="easy temporary files" />
+    <style>
+      @media (prefers-color-scheme: light) {
+        * {
+          --bg: #fbf1c7;
+          --pr: #3c3836;
+          --link: #b57614;
+        }
+      }
+      @media (prefers-color-scheme: dark) {
+        * {
+          --bg: #282828;
+          --pr: #ebdbb2;
+          --link: #d79921;
+        }
+      }
+
+      body {
+        background: var(--bg);
+        color: var(--pr);
+      }
+      a {
+        color: var(--link);
+      }
+
+      table {
+        border-collapse: collapse;
+        border-style: hidden;
+      }
+      table td,
+      table th {
+        border: 1px dashed var(--pr);
+        text-align: left;
+      }
+      th,
+      td {
+        padding: 15px;
+      }
+    </style>
+  </head>
+  <body>
+    <table>
+      <tr>
+        <th>url</th>
+        <th>size</th>
+        <th>retention time</th>
+        <th>delete</th>
+      </tr>
+      {% for entry in entries %}
+      <tr>
+        {% let url = crate::utils::make_url_from_key(&entry.key) %}
+        <td>
+          <a target="_blank" href="{{ url }}">{{ url }}</a>
+        </td>
+        <td>~{{ format!("{:.2}KB", entry.size as f32 / 1024.0) }}</td>
+        <td>
+          {{ crate::utils::retention_time(*entry.size).as_secs() / 60 / 60 }}H
+        </td>
+        <td>
+          <a target="_blank" href="{{ crate::utils::make_del_url(entry) }}"
+            >delete</a
+          >
+        </td>
+        <br />
+      </tr>
+      {% endfor %}
+    </table>
+  </body>
+</html>
