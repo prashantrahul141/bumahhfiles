@@ -1,6 +1,8 @@
 ## bumahhfiles
 
-Temporary file host
+temporary file host
+
+sister project of [dumahhfiles](https://github.com/prashantrahul141/dumahhfiles)
 
 ### Configuration
 
