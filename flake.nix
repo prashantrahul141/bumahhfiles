@@ -2,7 +2,7 @@
   description = "Rust env";
 
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/release-25.11";
+    nixpkgs.url = "github:NixOS/nixpkgs/release-26.05";
 
     crane.url = "github:ipetkov/crane";
 
@@ -15,7 +15,7 @@
   };
 
   outputs =
-    _@{
+    inputs@{
       self,
       nixpkgs,
       crane,
@@ -30,14 +30,17 @@
           overlays = [ fenix.overlays.default ];
         };
 
+        inherit (pkgs) lib;
+
         toolchain = pkgs.fenix.fromToolchainFile {
           file = ./rust-toolchain.toml;
-          sha256 = "sha256-gh/xTkxKHL4eiRXzWv8KP7vfjSk61Iq48x47BEDFgfk=";
+          sha256 = "sha256-mvUGEOHYJpn3ikC5hckneuGixaC+yGrkMM/liDIDgoU=";
         };
 
         craneLib = (crane.mkLib pkgs).overrideToolchain toolchain;
         src = ./.;
 
+        commonArgs = { inherit src; };
         GIT_HASH = builtins.substring 0 7 (
           builtins.replaceStrings [ "-dirty" ] [ "" ] (
             if self ? rev then
@@ -48,8 +51,6 @@
               "dirty"
           )
         );
-
-        commonArgs = { inherit src; };
 
         cargoArtifacts = craneLib.buildDepsOnly commonArgs;
         package = craneLib.buildPackage {
