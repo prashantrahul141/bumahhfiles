@@ -30,6 +30,8 @@ pub struct Config {
 
 impl Default for Config {
     fn default() -> Self {
+        use rand::distr::{Alphanumeric, SampleString};
+        let magic_key = Alphanumeric.sample_string(&mut rand::rng(), 16);
         Self {
             root_dir: std::path::PathBuf::from(env_or("BUMAHH_ROOT_DIR", "files".to_string())),
             internal_host: env_or("BUMAHH_INTERNAL_HOST", "0.0.0.0".to_string()),
@@ -43,7 +45,7 @@ impl Default for Config {
             max_file_size: env_or("BUMAHH_MAX_FILE_SIZE", 200 * 1024 * 1024),
             max_retention_hrs: env_or("BUMAHH_MAX_RETENTION_HRS", 7.0 * 24.0),
             min_retention_hrs: env_or("BUMAHH_MIN_RETENTION_HRS", 1.0),
-            magic_key: env_or("BUMAHH_MAGIC_KEY", "magic-key".to_string()),
+            magic_key: env_or("BUMAHH_MAGIC_KEY", magic_key),
             version: env!("GIT_HASH"),
         }
     }
