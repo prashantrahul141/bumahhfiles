@@ -62,7 +62,7 @@ fn setup_files_dir() -> Vec<DBEntry> {
         "files directory doesnt exist, creating new at path={:?}",
         CONFIG.root_dir
     );
-    _ = fs::create_dir(&CONFIG.root_dir);
+    _ = fs::create_dir_all(&CONFIG.root_dir);
     vec![]
 }
 
